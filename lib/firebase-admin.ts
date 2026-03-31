@@ -7,7 +7,7 @@ import { getStorage } from "firebase-admin/storage";
 const projectId = "tristan-archive";
 const clientEmail = "firebase-adminsdk-fbsvc@tristan-archive.iam.gserviceaccount.com";
 
-// 💡 .env.local을 무시하고, 실제 줄바꿈을 지원하는 백틱( ` )을 사용하여 키를 직접 주입합니다.
+// 💡 .replace 로직을 추가해서 줄바꿈 문자를 확실하게 처리합니다.
 const privateKey = `-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCfLmj1WtrT7mlN
 dltNtcX4xAcLdUo23ISvLF9ax49QjJ170nbAjUr+FkLemu3NC8BC9ZlbG7Rxa6fe
@@ -35,7 +35,7 @@ bbJTWayRvUjonvL7m+PxWGrIJ+2yOQ05MJS9KRkJAoGAJJZxMgPu/uC5loWuhiqn
 BceT1xCAOocKTQgdYR5+iQIGhqq5wbVV3+HFEsa8HnsncmabTeWB3eb7Zhg5S2H0
 oolzJZ9P6m01LR2Guh6dk7qtwWr6MX4YQzkLCeRChXj95Pd2EhLb5BZdYb2PJKNb
 iPScUjOKg9UK87SHpj42OSM=
------END PRIVATE KEY-----`;
+-----END PRIVATE KEY-----`.trim().replace(/\\n/g, '\n'); 
 
 if (!projectId || !clientEmail || !privateKey) {
   throw new Error("Firebase Admin 환경변수가 비어 있습니다.");
@@ -50,6 +50,7 @@ const adminApp =
           clientEmail,
           privateKey,
         }),
+        // 💡 주소가 tristan-archive.firebasestorage.app 이 맞다면 이대로 유지!
         storageBucket: "tristan-archive.firebasestorage.app", 
       });
 
