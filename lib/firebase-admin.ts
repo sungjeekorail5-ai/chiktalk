@@ -50,7 +50,7 @@ const adminApp =
           clientEmail,
           privateKey,
         }),
-        storageBucket: `${projectId}.firebasestorage.app`, 
+        storageBucket: "tristan-archive.firebasestorage.app", 
       });
 
 export const adminDb = getFirestore(adminApp);
