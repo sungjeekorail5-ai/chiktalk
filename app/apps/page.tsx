@@ -17,9 +17,8 @@ export default async function AppsPage() {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
 
-  // 💡 [권한 체크] 세션이 있고, 그 값이 'guest_session'이 아니어야 진짜 회원입니다.
-  const isLoggedIn = !!session;
-  const isRealUser = isLoggedIn && session !== "guest_session";
+  // 💡 [성지님 천재 아이디어 적용!] 게스트가 아닌 로그인 유저는 무조건 Staff(직원)입니다!
+  const isStaff = !!session && session !== "guest_session";
 
   // 1️⃣ 파이어베이스에서 등록된 모든 앱 가져오기 (최신순)
   const snapshot = await adminDb.collection("apps").orderBy("createdAt", "desc").get();
@@ -44,8 +43,8 @@ export default async function AppsPage() {
           칙칙톡톡 공식 애플리케이션 저장소
         </p>
 
-        {/* ⚙️ [수정] 관리자 전용 버튼: 이제 '진짜 회원'인 성지님만 보입니다! */}
-        {isRealUser && (
+        {/* ⚙️ 관리자 전용 버튼: 직원(로그인 유저)에게만 보입니다! */}
+        {isStaff && (
           <div className="pt-4 animate-fade-in">
             <Link 
               href="/admin/upload" 
@@ -54,13 +53,6 @@ export default async function AppsPage() {
               ⚙️ 관리자 전용: 새 앱 등록하기
             </Link>
           </div>
-        )}
-
-        {/* 💡 비회원으로 접속 중일 때 보여주는 안내 (선택사항) */}
-        {isLoggedIn && !isRealUser && (
-          <p className="text-xs text-amber-600 font-bold bg-amber-50 inline-block px-4 py-1 rounded-full mt-2">
-            ⚠️ 현재 게스트 모드로 접속 중입니다. 사내 전용 앱 이용이 제한됩니다.
-          </p>
         )}
       </div>
 
@@ -105,7 +97,7 @@ export default async function AppsPage() {
           </div>
         </div>
 
-        {/* 🔴 2. Staff Only (이메일 인증 회원 전용) */}
+        {/* 🔴 2. Staff Only (직원 전용) */}
         <div className="bg-gray-950 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group min-h-[400px]">
           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full blur-[80px] group-hover:bg-blue-600/20 transition-colors"></div>
 
@@ -119,8 +111,8 @@ export default async function AppsPage() {
           </div>
 
           <div className="space-y-4 relative z-10">
-            {/* 💡 [수정] isLoggedIn 대신 isRealUser를 체크합니다! */}
-            {isRealUser ? (
+            {/* 💡 [핵심] 직원이면 다 보여주고, 아니면 로그인 버튼만 보여줍니다! */}
+            {isStaff ? (
               staffApps.length > 0 ? (
                 staffApps.map((app) => (
                   <div key={app.id} className="flex items-center justify-between p-5 bg-gray-900/50 rounded-3xl border border-gray-800 hover:border-blue-900 hover:bg-gray-900 transition-all group/item">
@@ -146,11 +138,11 @@ export default async function AppsPage() {
                 <p className="text-center py-20 text-gray-600 font-bold italic">등록된 사내 전용 앱이 없습니다.</p>
               )
             ) : (
-              // 💡 비회원(Guest)이거나 로그아웃 상태면 이 화면이 보입니다.
-              <div className="text-center py-20 bg-gray-900/30 rounded-3xl border-2 border-dashed border-gray-800 animate-pulse">
-                <p className="text-sm text-gray-500 font-black mb-6">보안 정책에 따라<br/>정식 회원만 이용 가능합니다.</p>
-                <Link href="/login" className="inline-block bg-gray-800 hover:bg-white hover:text-black text-gray-300 px-8 py-3 rounded-2xl text-sm font-black transition-all active:scale-95">
-                  멤버십 인증하기
+              // 💡 로그인이 안 된 사용자에게만 깔끔하게 로그인 유도
+              <div className="text-center py-20 bg-gray-900/30 rounded-3xl border-2 border-dashed border-gray-800">
+                <p className="text-sm text-gray-500 font-black mb-6">사내 전용 앱은<br/>로그인 후 이용할 수 있습니다.</p>
+                <Link href="/login" className="inline-block bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl text-sm font-black transition-all active:scale-95">
+                  로그인하러 가기 🚄
                 </Link>
               </div>
             )}

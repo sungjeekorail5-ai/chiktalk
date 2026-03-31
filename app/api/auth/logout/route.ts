@@ -1,13 +1,11 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function GET(request: Request) {
-  // 1. 쿠키 저장소 불러오기
+  // 1. 로그인 세션(쿠키) 삭제
   const cookieStore = await cookies();
-  
-  // 2. 'session' 쿠키 삭제 (로그아웃 처리)
   cookieStore.delete("session");
-
-  // 3. 메인 페이지("/")로 강제 이동 (리다이렉트)
+  
+  // 2. 💡 [핵심] 0.0.0.0 에러 방지: 현재 접속한 진짜 도메인 주소를 기준으로 안전하게 홈("/")으로 돌려보냄
   return NextResponse.redirect(new URL("/", request.url));
 }
