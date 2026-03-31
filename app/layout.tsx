@@ -73,7 +73,6 @@ export default async function RootLayout({
                   </Link>
                 </div>
               ) : (
-                {/* 로그인 버튼 (모바일에서 짧은 텍스트) */}
                 <Link href="/login" className="bg-blue-600 text-white px-3 sm:px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
                     <span className="sm:hidden">GO</span>
                     <span className="hidden sm:inline">로그인</span>
