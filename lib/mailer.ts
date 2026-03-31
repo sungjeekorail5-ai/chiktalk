@@ -6,23 +6,28 @@ const user = process.env.SMTP_USER;
 const pass = process.env.SMTP_PASS;
 const from = process.env.SMTP_FROM;
 
+// 💡 [수정] 빌드를 멈추지 않도록 throw 대신 로그만 찍습니다.
 if (!host || !user || !pass || !from) {
-  throw new Error("SMTP 환경변수가 비어 있습니다.");
+  console.warn("⚠️ SMTP 환경변수가 비어 있습니다. 메일 기능이 비활성화됩니다.");
 }
 
-// 우체부(Transporter) 세팅은 파일 열릴 때 딱 한 번만!
-const transporter = nodemailer.createTransport({
-  host,
-  port,
-  secure: false,
-  auth: {
-    user,
-    pass,
-  },
-});
+// 💡 설정이 있을 때만 transporter를 만듭니다. (없으면 null)
+const transporter = (host && user && pass && from) 
+  ? nodemailer.createTransport({
+      host,
+      port,
+      secure: false,
+      auth: { user, pass },
+    }) 
+  : null;
 
-// 1️⃣ 기존 기능: 회원가입용 인증번호 발송 (이름 칙칙톡톡으로 업데이트 완료!)
+// 1️⃣ 기존 기능: 회원가입용 인증번호 발송
 export async function sendVerificationEmail(to: string, code: string) {
+  if (!transporter) {
+    console.error("❌ 메일 설정이 없어 인증번호를 보낼 수 없습니다.");
+    return;
+  }
+  
   await transporter.sendMail({
     from: `"칙칙톡톡 🚂" <${from}>`,
     to,
@@ -48,6 +53,11 @@ interface EmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
+  if (!transporter) {
+    console.error("❌ 메일 설정이 없어 메일을 보낼 수 없습니다.");
+    return false;
+  }
+
   try {
     const info = await transporter.sendMail({
       from: `"칙칙톡톡 🚂" <${from}>`,
@@ -59,6 +69,6 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
     return true;
   } catch (error) {
     console.error("메일 발송 실패:", error);
-    throw new Error("메일 발송에 실패했습니다.");
+    return false; // 빌드 중단을 막기 위해 throw 대신 false 리턴
   }
 }
