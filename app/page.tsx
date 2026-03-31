@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 
+// 💡 [캐시 방지 강력 처방] 메인 홈 화면도 무조건 로그인 상태를 매번 새로 확인하도록 강제!
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const cookieStore = await cookies();
   const isLoggedIn = cookieStore.has("session");

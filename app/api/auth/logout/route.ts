@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-export async function GET(request: Request) {
-  // 1. 로그인 세션(쿠키) 삭제
+export async function GET() {
+  // 1. 쿠키(신분증) 완벽하게 파기
   const cookieStore = await cookies();
   cookieStore.delete("session");
   
-  // 2. 💡 [핵심] 0.0.0.0 에러 방지: 현재 접속한 진짜 도메인 주소를 기준으로 안전하게 홈("/")으로 돌려보냄
-  return NextResponse.redirect(new URL("/", request.url));
+  // 2. 💡 [핵심] 0.0.0.0 에러 방어: 절대 주소 쓰지 말고 강제로 루트 경로("/")로 꽂아버림
+  return new NextResponse(null, {
+    status: 302,
+    headers: {
+      Location: "/",
+    },
+  });
 }
