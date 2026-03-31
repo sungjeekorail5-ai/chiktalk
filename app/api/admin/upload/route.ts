@@ -1,62 +1,69 @@
 import { NextResponse } from "next/server";
 import { adminDb, adminStorage } from "@/lib/firebase-admin";
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    // 💡 원래 body = await req.json() 대신 formData() 사용
-    const data = await req.formData();
-    const file = data.get("file") as File;
-    const title = data.get("title") as string;
-    const description = data.get("description") as string;
-    const version = data.get("version") as string;
-    const requireLogin = data.get("requireLogin") === "true";
+    const formData = await request.formData();
+    
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const version = formData.get("version") as string;
+    const requireLogin = formData.get("requireLogin") === "true";
+    const file = formData.get("file") as File;
+    const icon = formData.get("icon") as File | null; // 💡 아이콘은 선택사항
 
-    // 1. 필수 값 체크
-    if (!file || !title || !description || !version) {
-      return NextResponse.json(
-        { message: "파일을 포함한 모든 정보를 입력해주세요." },
-        { status: 400 }
-      );
+    if (!file || !title) {
+      return NextResponse.json({ message: "필수 정보가 누락되었습니다." }, { status: 400 });
     }
 
-    // 2. Firebase Storage에 파일 업로드 로직 추가
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // 1️⃣ 앱 설치 파일 업로드 (.apk 등)
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
     const fileName = `${Date.now()}_${file.name}`;
-    const bucket = adminStorage.bucket();
-    const storageFile = bucket.file(`apps/${fileName}`);
-
-    // 파일 저장
-    await storageFile.save(buffer, {
-      contentType: file.type || "application/octet-stream",
-    });
-
-    // 다운로드 가능한 서명된 URL 생성 (유효기간 길게 설정 가능)
-    const [fileUrl] = await storageFile.getSignedUrl({
+    const fileRef = adminStorage.bucket().file(`apps/${fileName}`);
+    
+    await fileRef.save(fileBuffer, { contentType: file.type });
+    const [fileUrl] = await fileRef.getSignedUrl({
       action: "read",
-      expires: "01-01-2099", // 아주 넉넉하게 설정
+      expires: "03-01-2500", // 사실상 영구 주소
     });
 
-    // 3. Firestore 'apps' 컬렉션에 데이터 저장
-    const newAppRef = await adminDb.collection("apps").add({
+    // 2️⃣ 💡 아이콘 이미지 업로드 (있을 경우만)
+    let iconUrl = ""; // 기본값은 빈 문자열 (나중에 앱 보관함에서 이모지로 대체 가능)
+    
+    if (icon) {
+      const iconBuffer = Buffer.from(await icon.arrayBuffer());
+      const iconName = `${Date.now()}_icon_${icon.name}`;
+      const iconRef = adminStorage.bucket().file(`icons/${iconName}`);
+      
+      await iconRef.save(iconBuffer, { contentType: icon.type });
+      const [signedIconUrl] = await iconRef.getSignedUrl({
+        action: "read",
+        expires: "03-01-2500",
+      });
+      iconUrl = signedIconUrl;
+    }
+
+    // 3️⃣ 🔥 파이어스토어 DB에 저장
+    const newApp = {
       title,
       description,
       version,
       requireLogin,
-      fileUrl, // 💡 실제 Storage 주소 저장
-      fileName,
+      fileUrl,
+      iconUrl, // 💡 이미지 주소 추가!
       createdAt: new Date().toISOString(),
-    });
+    };
 
-    return NextResponse.json({
-      message: "앱 등록 성공",
-      id: newAppRef.id,
-    });
-    
+    const docRef = await adminDb.collection("apps").add(newApp);
+
+    return NextResponse.json({ 
+      message: "성공", 
+      id: docRef.id,
+      data: newApp 
+    }, { status: 200 });
+
   } catch (error) {
-    console.error("앱 등록 에러:", error);
-    return NextResponse.json(
-      { message: "앱 등록 중 서버 오류가 발생했습니다." },
-      { status: 500 }
-    );
+    console.error("Upload Error:", error);
+    return NextResponse.json({ message: "서버 업로드 오류" }, { status: 500 });
   }
 }

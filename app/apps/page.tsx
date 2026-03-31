@@ -2,13 +2,17 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminDb } from "@/lib/firebase-admin";
 
-// 📝 앱 데이터 타입 정의
+// 💡 [캐시 방지] 매번 서버에서 최신 앱 목록과 로그인 상태를 확인하도록 강제합니다.
+export const dynamic = "force-dynamic";
+
+// 📝 앱 데이터 타입 정의 (iconUrl 추가됨)
 interface AppData {
   id: string;
   title: string;
   description: string;
   version: string;
   fileUrl: string;
+  iconUrl?: string; // 💡 서버에서 새로 추가한 아이콘 주소
   requireLogin: boolean;
   createdAt: string;
 }
@@ -17,7 +21,7 @@ export default async function AppsPage() {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
 
-  // 💡 [성지님 천재 아이디어 적용!] 게스트가 아닌 로그인 유저는 무조건 Staff(직원)입니다!
+  // 💡 게스트가 아닌 로그인 유저는 무조건 Staff(직원)로 간주
   const isStaff = !!session && session !== "guest_session";
 
   // 1️⃣ 파이어베이스에서 등록된 모든 앱 가져오기 (최신순)
@@ -43,15 +47,15 @@ export default async function AppsPage() {
           칙칙톡톡 공식 애플리케이션 저장소
         </p>
 
-        {/* ⚙️ 관리자 전용 버튼: 직원(로그인 유저)에게만 보입니다! */}
+        {/* ⚙️ 관리자 전용 버튼: 직원(로그인 유저)에게만 노출 */}
         {isStaff && (
           <div className="pt-4 animate-fade-in">
-            <Link 
+            <a 
               href="/admin/upload" 
               className="inline-flex items-center justify-center gap-2 bg-gray-900 hover:bg-blue-600 text-white font-black px-6 py-3 rounded-2xl transition-all shadow-xl hover:-translate-y-1 active:scale-95 text-sm"
             >
               ⚙️ 관리자 전용: 새 앱 등록하기
-            </Link>
+            </a>
           </div>
         )}
       </div>
@@ -74,8 +78,13 @@ export default async function AppsPage() {
               freeApps.map((app) => (
                 <div key={app.id} className="flex items-center justify-between p-5 bg-gray-50 rounded-3xl border border-gray-100 hover:shadow-xl hover:bg-white transition-all group/item">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover/item:scale-110 transition-transform">
-                      📱
+                    {/* 💡 아이콘 렌더링: 이미지가 있으면 img, 없으면 기본 이모지 */}
+                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-110 transition-transform">
+                      {app.iconUrl ? (
+                        <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-3xl">📱</span>
+                      )}
                     </div>
                     <div>
                       <h3 className="font-black text-gray-900 text-lg">{app.title}</h3>
@@ -111,14 +120,18 @@ export default async function AppsPage() {
           </div>
 
           <div className="space-y-4 relative z-10">
-            {/* 💡 [핵심] 직원이면 다 보여주고, 아니면 로그인 버튼만 보여줍니다! */}
             {isStaff ? (
               staffApps.length > 0 ? (
                 staffApps.map((app) => (
                   <div key={app.id} className="flex items-center justify-between p-5 bg-gray-900/50 rounded-3xl border border-gray-800 hover:border-blue-900 hover:bg-gray-900 transition-all group/item">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-gray-800 text-gray-300 rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover/item:scale-110 transition-transform">
-                        🛡️
+                      {/* 💡 아이콘 렌더링: 이미지가 있으면 img, 없으면 기본 쉴드 이모지 */}
+                      <div className="w-14 h-14 bg-gray-800 text-gray-300 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-110 transition-transform">
+                        {app.iconUrl ? (
+                          <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-3xl">🛡️</span>
+                        )}
                       </div>
                       <div>
                         <h3 className="font-black text-white text-lg">{app.title}</h3>
@@ -138,12 +151,11 @@ export default async function AppsPage() {
                 <p className="text-center py-20 text-gray-600 font-bold italic">등록된 사내 전용 앱이 없습니다.</p>
               )
             ) : (
-              // 💡 로그인이 안 된 사용자에게만 깔끔하게 로그인 유도
               <div className="text-center py-20 bg-gray-900/30 rounded-3xl border-2 border-dashed border-gray-800">
                 <p className="text-sm text-gray-500 font-black mb-6">사내 전용 앱은<br/>로그인 후 이용할 수 있습니다.</p>
-                <Link href="/login" className="inline-block bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl text-sm font-black transition-all active:scale-95">
+                <a href="/login" className="inline-block bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl text-sm font-black transition-all active:scale-95">
                   로그인하러 가기 🚄
-                </Link>
+                </a>
               </div>
             )}
           </div>
