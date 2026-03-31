@@ -7,8 +7,8 @@ import { getStorage } from "firebase-admin/storage";
 const projectId = "tristan-archive";
 const clientEmail = "firebase-adminsdk-fbsvc@tristan-archive.iam.gserviceaccount.com";
 
-// 💡 .replace 로직을 추가해서 줄바꿈 문자를 확실하게 처리합니다.
-const privateKey = `-----BEGIN PRIVATE KEY-----
+// 💡 서버 환경(Vercel 등)에서 발생할 수 있는 모든 줄바꿈 이슈를 원천 차단합니다.
+const rawKey = `-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCfLmj1WtrT7mlN
 dltNtcX4xAcLdUo23ISvLF9ax49QjJ170nbAjUr+FkLemu3NC8BC9ZlbG7Rxa6fe
 N4oxllUYrWr8JyjebdR8O/AAw8E3st6IPi/NgAtyu51rB0PPsJPLhkkjKQZT3x4+
@@ -35,7 +35,10 @@ bbJTWayRvUjonvL7m+PxWGrIJ+2yOQ05MJS9KRkJAoGAJJZxMgPu/uC5loWuhiqn
 BceT1xCAOocKTQgdYR5+iQIGhqq5wbVV3+HFEsa8HnsncmabTeWB3eb7Zhg5S2H0
 oolzJZ9P6m01LR2Guh6dk7qtwWr6MX4YQzkLCeRChXj95Pd2EhLb5BZdYb2PJKNb
 iPScUjOKg9UK87SHpj42OSM=
------END PRIVATE KEY-----`.trim().replace(/\\n/g, '\n'); 
+-----END PRIVATE KEY-----`;
+
+// 💡 문자열에서 실제 줄바꿈을 찾아 파이어베이스 규격(\n)으로 강제 변환합니다.
+const privateKey = rawKey.trim().replace(/\\n/g, '\n');
 
 if (!projectId || !clientEmail || !privateKey) {
   throw new Error("Firebase Admin 환경변수가 비어 있습니다.");
@@ -50,7 +53,6 @@ const adminApp =
           clientEmail,
           privateKey,
         }),
-        // 💡 주소가 tristan-archive.firebasestorage.app 이 맞다면 이대로 유지!
         storageBucket: "tristan-archive.firebasestorage.app", 
       });
 
