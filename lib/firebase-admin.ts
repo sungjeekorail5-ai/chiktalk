@@ -7,7 +7,7 @@ import { getStorage } from "firebase-admin/storage";
 const projectId = "tristan-archive";
 const clientEmail = "firebase-adminsdk-fbsvc@tristan-archive.iam.gserviceaccount.com";
 
-// 💡 서버 환경(Vercel 등)에서 발생할 수 있는 모든 줄바꿈 이슈를 원천 차단합니다.
+// 💡 1. 변수에 키를 담을 때 앞뒤 공백을 완전히 제거합니다.
 const rawKey = `-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCfLmj1WtrT7mlN
 dltNtcX4xAcLdUo23ISvLF9ax49QjJ170nbAjUr+FkLemu3NC8BC9ZlbG7Rxa6fe
@@ -37,8 +37,8 @@ oolzJZ9P6m01LR2Guh6dk7qtwWr6MX4YQzkLCeRChXj95Pd2EhLb5BZdYb2PJKNb
 iPScUjOKg9UK87SHpj42OSM=
 -----END PRIVATE KEY-----`;
 
-// 💡 문자열에서 실제 줄바꿈을 찾아 파이어베이스 규격(\n)으로 강제 변환합니다.
-const privateKey = rawKey.trim().replace(/\\n/g, '\n');
+// 💡 2. 서버 환경에서 발생하는 모든 종류의 줄바꿈 문제를 해결하는 필승 로직입니다.
+const privateKey = rawKey.trim().replace(/\\n/g, '\n').replace(/\n/g, '\n');
 
 if (!projectId || !clientEmail || !privateKey) {
   throw new Error("Firebase Admin 환경변수가 비어 있습니다.");
