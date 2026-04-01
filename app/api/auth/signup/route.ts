@@ -7,12 +7,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const username = String(body.username || "").trim().toLowerCase();
     const password = String(body.password || "").trim();
-    // 프론트엔드에서 변경한 키값('email')과 기존 키값('korailEmail')을 모두 안전하게 지원합니다.
     const email = String(body.email || body.korailEmail || "").trim().toLowerCase();
+    
+    // 💡 [추가] 닉네임 필드 가져오기
+    const nickname = String(body.nickname || "").trim();
 
-    if (!username || !password || !email) {
+    // 💡 [수정] 필수 입력값에 닉네임 추가
+    if (!username || !password || !email || !nickname) {
       return NextResponse.json(
-        { message: "아이디, 비밀번호, korail 이메일을 입력해주세요." },
+        { message: "아이디, 비밀번호, 닉네임, korail 이메일을 모두 입력해주세요." },
         { status: 400 }
       );
     }
@@ -20,6 +23,14 @@ export async function POST(req: Request) {
     if (!email.endsWith("@korail.com")) {
       return NextResponse.json(
         { message: "@korail.com 이메일만 가입할 수 있습니다." },
+        { status: 400 }
+      );
+    }
+
+    // 💡 [추가] 닉네임 길이 제한 (2자~10자 사이가 적당합니다)
+    if (nickname.length < 2 || nickname.length > 10) {
+      return NextResponse.json(
+        { message: "닉네임은 2자 이상 10자 이하로 입력해주세요." },
         { status: 400 }
       );
     }
@@ -38,7 +49,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔍 수정된 부분: 문서 ID가 아닌 쿼리로 '인증 완료된' 최신 내역 찾기
+    // 🔍 인증 완료된 내역 찾기
     const verificationSnap = await adminDb
       .collection("emailVerifications")
       .where("email", "==", email)
@@ -56,6 +67,15 @@ export async function POST(req: Request) {
 
     const verificationDoc = verificationSnap.docs[0];
 
+    // 💡 [추가] 닉네임 중복 체크 (DB에서 같은 닉네임이 있는지 확인)
+    const nicknameCheck = await adminDb.collection("users").where("nickname", "==", nickname).get();
+    if (!nicknameCheck.empty) {
+      return NextResponse.json(
+        { message: "이미 사용 중인 닉네임입니다." },
+        { status: 409 }
+      );
+    }
+
     // 아이디 중복 체크
     const userRef = adminDb.collection("users").doc(username);
     const existing = await userRef.get();
@@ -67,19 +87,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // 비밀번호 암호화 (기존 커스텀 함수 사용)
+    // 비밀번호 암호화
     const passwordHash = await hashPassword(password);
 
     // 유저 정보 저장
     await userRef.set({
       username,
+      nickname, // 💡 [추가] 닉네임 저장
       korailEmail: email,
       passwordHash,
       korailVerified: true,
       createdAt: new Date().toISOString(),
     });
 
-    // 🔍 사용이 끝난 인증 문서 깔끔하게 삭제
+    // 인증 문서 삭제
     await verificationDoc.ref.delete();
 
     return NextResponse.json({

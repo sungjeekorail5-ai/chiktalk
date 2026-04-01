@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import "./globals.css";
+import { AuthProvider } from "../lib/AuthContext";
+import NavbarClient from "../components/NavbarClient";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,58 +25,43 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // 서버에서 로그인 여부를 미리 확인 (깜빡임 방지용)
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
-
   const isLoggedIn = !!session;
   const isRealUser = isLoggedIn && session !== "guest_session";
 
   return (
     <html lang="ko">
       <body className={`${inter.className} bg-gray-50 text-gray-900`}>
-        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-4 flex justify-between items-center">
-            
-            <Link href="/" className="text-lg sm:text-2xl font-black tracking-tighter flex items-center group flex-shrink-0">
-              <span className="text-gray-900">칙칙</span><span className="text-blue-600">톡톡</span>
-              <span className="hidden sm:flex items-center ml-1 -mt-2 whitespace-nowrap opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
-                <span className="text-2xl">🚄</span>
-              </span>
-            </Link>
+        {/* 💡 전역 상태 우산을 씌워줍니다 */}
+        <AuthProvider>
+          <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-4 flex justify-between items-center">
+              
+              <Link href="/" className="text-lg sm:text-2xl font-black tracking-tighter flex items-center group flex-shrink-0">
+                <span className="text-gray-900">칙칙</span><span className="text-blue-600">톡톡</span>
+                <span className="hidden sm:flex items-center ml-1 -mt-2 whitespace-nowrap opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
+                  <span className="text-2xl">🚄</span>
+                </span>
+              </Link>
 
-            <div className="flex items-center gap-2 sm:gap-6 text-xs sm:text-sm font-bold text-gray-600">
-              
-              <a href="/apps" className="hover:text-blue-600 transition-colors uppercase tracking-wider">Apps</a>
-              <a href="/board" className="hover:text-blue-600 transition-colors uppercase tracking-wider">Board</a>
-              
-              <span className="hidden md:inline text-gray-300">|</span>
-              
-              {isLoggedIn ? (
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <span className={`text-[7px] sm:text-[10px] px-1 py-0.5 rounded font-black border flex-shrink-0 ${
-                    isRealUser ? "bg-blue-100 text-blue-600 border-blue-200" : "bg-amber-100 text-amber-600 border-amber-200"
-                  }`}>
-                    {isRealUser ? 'STAFF' : 'GUEST'}
-                  </span>
-                  
-                  <a href="/api/auth/logout" className="bg-gray-100 text-gray-600 px-2 sm:px-4 py-1.5 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap">
-                    <span className="sm:hidden">OFF</span>
-                    <span className="hidden sm:inline">로그아웃</span>
-                  </a>
-                </div>
-              ) : (
-                <a href="/login" className="bg-blue-600 text-white px-3 sm:px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
-                    <span className="sm:hidden">GO</span>
-                    <span className="hidden sm:inline">로그인</span>
-                </a>
-              )}
+              <div className="flex items-center gap-2 sm:gap-6 text-xs sm:text-sm font-bold text-gray-600">
+                <a href="/apps" className="hover:text-blue-600 transition-colors uppercase tracking-wider">Apps</a>
+                <a href="/board" className="hover:text-blue-600 transition-colors uppercase tracking-wider">Board</a>
+                
+                <span className="hidden md:inline text-gray-300">|</span>
+                
+                {/* 💡 로그인 버튼 & 닉네임 영역을 클라이언트 컴포넌트로 교체! */}
+                <NavbarClient isLoggedIn={isLoggedIn} isRealUser={isRealUser} />
+              </div>
             </div>
-          </div>
-        </nav>
+          </nav>
 
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-10">
-          {children}
-        </div>
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-10">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
