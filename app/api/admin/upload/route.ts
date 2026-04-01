@@ -1,73 +1,28 @@
 import { NextResponse } from "next/server";
-import { adminDb, adminStorage } from "@/lib/firebase-admin";
+import { adminDb } from "@/lib/firebase-admin"; // 성지님 경로에 맞게 확인해주세요!
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const formData = await request.formData();
+    // 💡 이제 FormData(파일)가 아니라 가벼운 JSON(텍스트)만 받습니다.
+    const data = await req.json();
     
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const version = formData.get("version") as string;
-    const requireLogin = formData.get("requireLogin") === "true";
-    const file = formData.get("file") as File;
-    const icon = formData.get("icon") as File | null; // 💡 여기서 null 체크 들어갑니다.
-
-    if (!file || !title) {
-      return NextResponse.json({ message: "앱 파일과 제목은 필수입니다! 😅" }, { status: 400 });
-    }
-
-    // --- 1️⃣ 앱 설치 파일 업로드 ---
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const fileName = `${Date.now()}_${file.name}`;
-    const fileRef = adminStorage.bucket().file(`apps/${fileName}`);
-    
-    await fileRef.save(fileBuffer, { contentType: file.type });
-    const [fileUrl] = await fileRef.getSignedUrl({
-      action: "read",
-      expires: "03-01-2500",
-    });
-
-    // --- 2️⃣ 아이콘 업로드 (null이면 건너뜁니다!) ---
-    let iconUrl = ""; 
-    
-    if (icon && icon.size > 0) { // 💡 파일이 진짜 존재하고 크기가 0보다 클 때만!
-      try {
-        const iconBuffer = Buffer.from(await icon.arrayBuffer());
-        const iconName = `${Date.now()}_icon_${icon.name}`;
-        const iconRef = adminStorage.bucket().file(`icons/${iconName}`);
-        
-        await iconRef.save(iconBuffer, { contentType: icon.type });
-        const [signedIconUrl] = await iconRef.getSignedUrl({
-          action: "read",
-          expires: "03-01-2500",
-        });
-        iconUrl = signedIconUrl;
-      } catch (iconError) {
-        console.error("아이콘 업로드 실패 (무시하고 진행):", iconError);
-        // 아이콘 실패해도 앱 업로드는 계속 진행하게 냅둡니다.
-      }
-    }
-
-    // --- 3️⃣ 파이어스토어 DB 저장 ---
+    // DB에 저장할 앱 정보 조합
     const newApp = {
-      title,
-      description,
-      version,
-      requireLogin,
-      fileUrl,
-      iconUrl, // 아이콘 없으면 빈 문자열 저장
+      title: data.title,
+      description: data.description,
+      version: data.version,
+      requireLogin: data.requireLogin,
+      fileUrl: data.fileUrl, // 프론트엔드에서 파이어베이스에 직접 올리고 받아온 주소!
+      iconUrl: data.iconUrl || "",
       createdAt: new Date().toISOString(),
     };
 
-    const docRef = await adminDb.collection("apps").add(newApp);
+    // Firestore DB 'apps' 컬렉션에 저장
+    await adminDb.collection("apps").add(newApp);
 
-    return NextResponse.json({ 
-      message: "성공적으로 업로드되었습니다! 🚂💨", 
-      id: docRef.id 
-    }, { status: 200 });
-
+    return NextResponse.json({ success: true, message: "업로드 성공" });
   } catch (error) {
-    console.error("Upload Global Error:", error);
-    return NextResponse.json({ message: "서버 내부 오류가 발생했습니다. ㅠㅠ" }, { status: 500 });
+    console.error("DB 저장 에러:", error);
+    return NextResponse.json({ success: false, message: "서버 오류 발생" }, { status: 500 });
   }
 }

@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function AppUploadPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(""); // 💡 진행 상황 표시용
   const [message, setMessage] = useState({ text: "", type: "" });
 
   const [title, setTitle] = useState("");
@@ -14,25 +15,43 @@ export default function AppUploadPage() {
   const [version, setVersion] = useState("1.0.0");
   const [requireLogin, setRequireLogin] = useState(false);
   
-  // 💡 파일 상태 (앱 파일 + 아이콘 이미지)
   const [file, setFile] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
 
-  // 앱 파일 선택
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
     }
   };
 
-  // 💡 아이콘 이미지 선택 및 미리보기
   const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedIcon = e.target.files[0];
       setIcon(selectedIcon);
-      setIconPreview(URL.createObjectURL(selectedIcon)); // 미리보기 생성
+      setIconPreview(URL.createObjectURL(selectedIcon));
     }
+  };
+
+  // 💡 [핵심] Vercel 안 거치고 파이어베이스 스토리지로 40MB 다이렉트 슛!
+  const uploadToFirebaseDirectly = async (fileToUpload: File, folder: string) => {
+    const bucket = "tristan-archive.firebasestorage.app"; // 성지님 버킷 주소
+    const fileName = `${Date.now()}_${fileToUpload.name}`;
+    const encodedPath = encodeURIComponent(`${folder}/${fileName}`);
+    const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodedPath}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": fileToUpload.type || "application/octet-stream",
+      },
+      body: fileToUpload, // 브라우저에서 직접 쏩니다!
+    });
+
+    if (!res.ok) throw new Error("파이어베이스 직접 업로드 실패");
+
+    const data = await res.json();
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media&token=${data.downloadTokens}`;
   };
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -45,22 +64,31 @@ export default function AppUploadPage() {
     setIsLoading(true);
     setMessage({ text: "", type: "" });
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("version", version);
-    formData.append("requireLogin", requireLogin ? "true" : "false");
-    formData.append("file", file);
-    
-    // 💡 아이콘 파일이 있으면 추가!
-    if (icon) {
-      formData.append("icon", icon);
-    }
-
     try {
+      // 1️⃣ 아이콘 다이렉트 업로드
+      let iconUrl = "";
+      if (icon) {
+        setUploadProgress("아이콘 업로드 중...");
+        iconUrl = await uploadToFirebaseDirectly(icon, "icons");
+      }
+
+      // 2️⃣ 40MB APK 다이렉트 업로드 (Vercel 용량 제한 무시!)
+      setUploadProgress("앱 파일(APK) 업로드 중... (40MB라 조금 걸립니다!)");
+      const fileUrl = await uploadToFirebaseDirectly(file, "apps");
+
+      // 3️⃣ DB에 글쓰기 (Vercel API로는 무거운 파일 빼고 '글자'만 보냅니다)
+      setUploadProgress("데이터베이스 저장 중...");
       const res = await fetch("/api/admin/upload", {
         method: "POST",
-        body: formData, 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          version,
+          requireLogin,
+          fileUrl, // 스토리지에서 받은 주소만 전송!
+          iconUrl
+        }),
       });
 
       if (res.ok) {
@@ -71,9 +99,11 @@ export default function AppUploadPage() {
         setMessage({ text: data.message || "업로드 실패", type: "error" });
       }
     } catch (error) {
-      setMessage({ text: "서버 오류가 발생했습니다.", type: "error" });
+      console.error(error);
+      setMessage({ text: "업로드 중 오류가 발생했습니다.", type: "error" });
     } finally {
       setIsLoading(false);
+      setUploadProgress("");
     }
   };
 
@@ -91,7 +121,6 @@ export default function AppUploadPage() {
 
         <form onSubmit={handleUpload} className="space-y-6">
           
-          {/* 💡 앱 아이콘 선택 영역 추가 */}
           <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 rounded-[2rem] border-2 border-dashed border-blue-200">
             <label className="text-xs font-black text-blue-600 uppercase tracking-widest">App Icon</label>
             <div className="relative group cursor-pointer">
@@ -110,38 +139,18 @@ export default function AppUploadPage() {
           <div className="grid grid-cols-4 gap-4">
             <div className="col-span-3 space-y-2">
               <label className="text-xs font-black text-gray-900 uppercase tracking-widest">App Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="예: 급여계산기"
-                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:outline-none"
-                required
-              />
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="예: 급여계산기" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:outline-none" required />
             </div>
 
             <div className="col-span-1 space-y-2">
               <label className="text-xs font-black text-gray-900 uppercase tracking-widest">Version</label>
-              <input
-                type="text"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-center font-bold text-blue-600 focus:outline-none"
-                required
-              />
+              <input type="text" value={version} onChange={(e) => setVersion(e.target.value)} className="w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-center font-bold text-blue-600 focus:outline-none" required />
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-900 uppercase tracking-widest">Description</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="예: 철도인을 위한 맞춤형 급여 자동 계산기"
-              className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none"
-              required
-            />
+            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="예: 철도인을 위한 맞춤형 급여 자동 계산기" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none" required />
           </div>
 
           <div className="space-y-2">
@@ -172,6 +181,13 @@ export default function AppUploadPage() {
           {message.text && (
             <div className={`p-4 rounded-xl text-sm font-bold text-center ${message.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
               {message.text}
+            </div>
+          )}
+
+          {/* 💡 진행 상황 표시 */}
+          {uploadProgress && (
+            <div className="p-4 rounded-xl text-sm font-bold text-center bg-blue-50 text-blue-600 animate-pulse">
+              {uploadProgress}
             </div>
           )}
 
