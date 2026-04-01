@@ -39,22 +39,23 @@ export default function WritePage() {
         body: JSON.stringify({ 
           title, 
           content, 
-          userId: user.id,        // 💡 로그인된 아이디 자동 전송
-          nickname: user.nickname, // 💡 로그인된 닉네임 자동 전송
+          userId: user.id,        
+          nickname: user.nickname, 
           imageUrl 
         }), 
       });
 
       if (res.ok) {
-        alert("열차 소식이 성공적으로 등록되었습니다! 🚂✨");
-        router.push("/board/list"); // 목록 페이지로 이동 (경로에 맞춰 수정하세요)
+        const data = await res.json();
+        
+        router.push(`/board/${data.id}`); 
         router.refresh();
       } else {
         alert("게시글 등록에 실패했습니다.");
       }
     } catch (error) {
       console.error(error);
-      alert("등록 중 오류가 발생했습니다!");
+      alert("등록 중 오류가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
     }

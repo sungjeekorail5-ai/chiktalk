@@ -7,31 +7,57 @@ interface Post {
   id: string;
   title: string;
   content: string;
-  author: string;
+  author?: string;         // 예전 글들을 위한 예비용
+  authorNickname?: string; // 💡 새로 추가된 닉네임 필드
   createdAt: any;
+  views?: number;          // 💡 조회수 표시를 위해 새로 추가!
+  commentCount?: number;   // 💡 댓글 숫자 표시를 위해 추가!
+}
+
+// 💡 마법의 시간 계산 함수 (방금 전, 5분 전, 2시간 전 등을 계산해줍니다)
+function timeAgo(dateInput: any) {
+  if (!dateInput) return "방금 전";
+
+  let date: Date;
+  // 문자열 형태(ISO)로 들어온 경우
+  if (typeof dateInput === "string") {
+    date = new Date(dateInput);
+  } 
+  // 파이어베이스 Timestamp 객체로 들어온 경우 (예전 글 대비)
+  else if (dateInput.seconds) {
+    date = new Date(dateInput.seconds * 1000);
+  } else {
+    return "방금 전";
+  }
+
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "방금 전";
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+  
+  return date.toLocaleDateString(); // 한 달 이상 지나면 그냥 날짜로 표시
 }
 
 export default function BoardPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(""); // 💡 현재 접속한 유저 아이디 저장
+  const [currentUserId, setCurrentUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  // 👑 [슈퍼 관리자 설정] 여기에 성지님의 진짜 로그인 아이디를 적으세요!
   const ADMIN_ID = "sungjee90"; 
   
-  // 1️⃣ 데이터 로딩 및 권한 확인
   useEffect(() => {
     async function fetchData() {
       try {
-        // 서버 API(/api/board/list)는 posts 목록과 함께 
-        // 현재 로그인한 사람의 userId를 같이 쏴줘야 합니다.
         const res = await fetch("/api/board/list");
         const data = await res.json();
         
         setPosts(data.posts || []);
         setIsLoggedIn(data.isLoggedIn);
-        setCurrentUserId(data.userId || ""); // 💡 서버에서 보낸 아이디 세팅
+        setCurrentUserId(data.userId || "");
       } catch (error) {
         console.error("데이터 로딩 실패:", error);
       } finally {
@@ -41,10 +67,8 @@ export default function BoardPage() {
     fetchData();
   }, []);
 
-  // 💡 아이디가 성지님 것과 일치하는지 확인!
   const isAdmin = isLoggedIn && currentUserId === ADMIN_ID;
 
-  // 🗑️ 삭제 핸들러
   const handleDelete = async (e: React.MouseEvent, postId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -94,16 +118,15 @@ export default function BoardPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[12px] font-bold">
-                      <span className="text-blue-600">{post.author}</span>
+                      <span className="text-blue-600">
+                        {post.authorNickname || post.author || "익명 승객"}
+                      </span>
                       <span className="text-gray-300">·</span>
                       <span className="text-gray-400">
-                        {post.createdAt?.seconds 
-                          ? new Date(post.createdAt.seconds * 1000).toLocaleDateString() 
-                          : "방금 전"}
+                        {timeAgo(post.createdAt)}
                       </span>
                     </div>
 
-                    {/* 🛡️ 오직 성지님(Admin 아이디)에게만 보이는 삭제 버튼 */}
                     {isAdmin && (
                       <button
                         onClick={(e) => handleDelete(e, post.id)}
@@ -124,9 +147,15 @@ export default function BoardPage() {
                   </div>
 
                   <div className="flex items-center gap-4 pt-2">
-                    <div className="flex items-center gap-1 text-gray-300">
-                      <span className="text-[12px] font-bold">💬 0</span>
+                    <div className="flex items-center gap-1 text-gray-400">
+                      <span className="text-[12px] font-bold">👀 {post.views || 0}</span>
                     </div>
+                    
+                    {/* 💡 💬 0 대신 실제 숫자를 넣어줍니다! 댓글이 있으면 파란색으로 강조됩니다. */}
+                    <div className={`flex items-center gap-1 ${post.commentCount ? 'text-blue-500' : 'text-gray-300'}`}>
+                      <span className="text-[12px] font-bold">💬 {post.commentCount || 0}</span>
+                    </div>
+
                     <div className="flex items-center gap-1 text-gray-300">
                       <span className="text-[12px] font-bold">👍 0</span>
                     </div>
