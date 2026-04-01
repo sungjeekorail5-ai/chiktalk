@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/AuthContext"; 
 import Link from "next/link"; 
 
+// 🛠️ 1. 게시글 수정/삭제 버튼 (기존 로직 그대로)
 export function PostActionButtons({ postId, authorId }: { postId: string, authorId: string }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -34,6 +35,7 @@ export function PostActionButtons({ postId, authorId }: { postId: string, author
   );
 }
 
+// ❤️ 2. 좋아요 버튼 컴포넌트 (기존 로직 그대로)
 export function LikeButton({ postId, initialLikes, likedUsers = [] }: { postId: string, initialLikes: number, likedUsers: string[] }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -82,34 +84,45 @@ export function LikeButton({ postId, initialLikes, likedUsers = [] }: { postId: 
   );
 }
 
+// 💬 3. 댓글 전체 영역 (블라인드 UI 탑재 + 모든 기존 로직 포함)
 export function CommentSection({ postId, comments }: { postId: string, comments: any[] }) {
   const router = useRouter();
   const { user } = useAuth(); 
   const ADMIN_ID = "sungjee90";
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const [replyTo, setReplyTo] = useState<string | null>(null); 
+  // 상태 관리 (원본 로직 모두 유지)
+  const [replyTo, setReplyTo] = useState<{id: string, nickname: string} | null>(null); 
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false); // 하단바 확장 여부
 
   const topLevelComments = comments.filter(c => !c.parentId);
 
-  const handleSubmit = async (e: React.FormEvent, parentId: string | null = null) => {
+  // 댓글 등록 핸들러
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return alert("로그인한 승객만 댓글을 달 수 있습니다! ⛔");
-    if (!content.trim()) return alert("댓글 내용을 입력해주세요!");
+    if (!content.trim()) return;
     setIsLoading(true);
 
     const res = await fetch(`/api/board/${postId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, nickname: user.nickname, content, parentId }),
+      body: JSON.stringify({ 
+        userId: user.id, 
+        nickname: user.nickname, 
+        content, 
+        parentId: replyTo?.id || null 
+      }),
     });
 
     if (res.ok) {
       setContent("");
-      setReplyTo(null); 
+      setReplyTo(null);
+      setIsExpanded(false); 
       router.refresh(); 
     }
     setIsLoading(false);
@@ -139,53 +152,29 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
     return user && (user.id === authorId || user.id === ADMIN_ID);
   };
 
-  const renderForm = (parentId: string | null = null) => {
-    if (!user) return (
-      <div className="mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100 text-center text-gray-400 font-bold text-sm">
-        로그인 후 따뜻한 댓글을 남길 수 있습니다. 🚂
-      </div>
-    );
-
-    return (
-      <form onSubmit={(e) => handleSubmit(e, parentId)} className="mt-4 mb-8 bg-gray-50 p-4 md:p-5 rounded-2xl flex flex-col gap-3 border border-gray-100">
-        <div className="px-2 font-black text-blue-600 text-[12px] md:text-sm flex items-center gap-2">
-          <span>🚄 {user.nickname}</span>
-          {parentId && <span className="text-[10px] text-blue-400/70">(대댓글 작성)</span>}
-        </div>
-        
-        {/* 💡 모바일 튕김 방지: flex-col(모바일) -> flex-row(PC) */}
-        <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-          <input
-            type="text" placeholder="따뜻한 댓글을 남겨주세요..." value={content} onChange={e => setContent(e.target.value)} required
-            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm transition-all"
-          />
-          <button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-black px-6 py-3 rounded-xl transition-all shadow-md active:scale-95 shrink-0 text-sm">
-            {isLoading ? "..." : "등록"}
-          </button>
-          {parentId && (
-            <button type="button" onClick={() => { setReplyTo(null); setContent(""); }} className="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold rounded-xl text-sm transition-all shrink-0">
-              취소
-            </button>
-          )}
-        </div>
-      </form>
-    );
+  // 답글 버튼 클릭 시 하단바 활성화 및 타겟팅
+  const handleReplyClick = (cmtId: string, nickname: string) => {
+    if(!user) return alert("로그인이 필요합니다! 🚂");
+    setReplyTo({ id: cmtId, nickname });
+    setIsExpanded(true);
   };
 
+  // 하단바 열릴 때 자동 포커스
+  useEffect(() => {
+    if (isExpanded) textareaRef.current?.focus();
+  }, [isExpanded]);
+
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
-      <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">댓글 {comments.length}개</h3>
+    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10 mb-32">
+      <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-6">댓글 {comments.length}개</h3>
 
-      {replyTo === null && renderForm(null)}
-
+      {/* 댓글 목록 출력 영역 (성지님 원본 스타일 유지) */}
       <div className="space-y-6">
         {topLevelComments.length === 0 ? (
           <p className="text-gray-400 text-sm text-center py-10">아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</p>
         ) : (
           topLevelComments.map((cmt) => (
             <div key={cmt.id} className="border-b border-gray-50 pb-5 last:border-0">
-              
-              {/* 💡 댓글 닉네임/날짜 정렬 개선 */}
               <div className="flex items-center justify-between mb-2 gap-2">
                 <span className="font-bold text-gray-900 text-sm truncate min-w-0">
                   {cmt.authorNickname || cmt.author || "익명 승객"}
@@ -215,14 +204,16 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
                 <p className="text-gray-700 mb-2 whitespace-pre-wrap text-sm md:text-base leading-relaxed">{cmt.content}</p>
               )}
 
-              <button onClick={() => { setReplyTo(cmt.id); setContent(""); }} className="text-[11px] font-bold text-gray-400 hover:text-blue-600 transition-colors">
+              <button 
+                onClick={() => handleReplyClick(cmt.id, cmt.authorNickname || "익명")} 
+                className="text-[11px] font-bold text-gray-400 hover:text-blue-600 transition-colors"
+              >
                 ↳ 답글 달기
               </button>
 
+              {/* 대댓글 영역 (기존 로직 유지) */}
               <div className="mt-3 space-y-2">
-                {comments
-                  .filter(reply => reply.parentId === cmt.id)
-                  .map(reply => (
+                {comments.filter(reply => reply.parentId === cmt.id).map(reply => (
                   <div key={reply.id} className="ml-4 md:ml-6 pl-3 md:pl-4 border-l-[3px] border-blue-100 bg-gray-50/50 p-3 rounded-r-xl">
                     <div className="flex items-center justify-between mb-1 gap-2">
                       <span className="font-bold text-gray-900 text-[11px] md:text-xs truncate min-w-0">
@@ -254,9 +245,54 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
                   </div>
                 ))}
               </div>
-              {replyTo === cmt.id && renderForm(cmt.id)}
             </div>
           ))
+        )}
+      </div>
+
+      {/* 🚀 블라인드 스타일 하단 고정 댓글 입력바 (새로운 UX) */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 transition-all duration-300 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] ${isExpanded ? 'h-auto p-4 pb-[env(safe-area-inset-bottom,20px)]' : 'h-20 flex items-center px-4 pb-[env(safe-area-inset-bottom)]'}`}>
+        {!isExpanded ? (
+          <div 
+            onClick={() => { if(!user) return alert("로그인이 필요합니다! 🚂"); setIsExpanded(true); }}
+            className="w-full h-12 bg-gray-50 border border-gray-100 rounded-full flex items-center px-5 gap-3 cursor-pointer group"
+          >
+            <span className="text-gray-400 text-xl transition-transform group-active:scale-90">🖼️</span>
+            <span className="text-gray-400 text-sm font-medium">댓글을 남겨주세요...</span>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto flex flex-col gap-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-black text-blue-600 flex items-center gap-1">
+                {replyTo ? `↳ ${replyTo.nickname}님에게 답글 남기는 중` : `🚄 ${user?.nickname}님`}
+              </span>
+              <button 
+                type="button" 
+                onClick={() => {setIsExpanded(false); setReplyTo(null); setContent("");}} 
+                className="text-[11px] font-bold text-gray-400 px-2 py-1"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="flex items-end gap-3 bg-gray-50 rounded-2xl p-3 border border-gray-100 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+              <span className="text-xl mb-1 opacity-50">🖼️</span>
+              <textarea
+                ref={textareaRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={replyTo ? `${replyTo.nickname}님에게 따뜻한 답글을...` : "따뜻한 댓글을 남겨주세요..."}
+                className="flex-1 bg-transparent border-none p-0 text-sm outline-none resize-none min-h-[80px]"
+                rows={3}
+              />
+              <button 
+                type="submit" 
+                disabled={isLoading || !content.trim()}
+                className="bg-blue-600 text-white font-black px-6 py-2.5 rounded-xl shadow-md active:scale-95 disabled:bg-gray-200 transition-all text-sm shrink-0 mb-0.5"
+              >
+                {isLoading ? "..." : "등록"}
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>
