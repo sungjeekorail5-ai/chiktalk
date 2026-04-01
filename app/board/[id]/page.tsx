@@ -37,7 +37,7 @@ export default async function PostDetailPage({ params }: Props) {
       
       {/* 🧭 상단 네비게이션 */}
       <div className="flex justify-between items-center py-2">
-        <Link href="/board" className="text-gray-500 hover:text-blue-600 font-bold flex items-center gap-2 transition-all">
+        <Link href="/board" className="text-gray-500 hover:text-blue-600 font-bold flex items-center gap-2 transition-all text-sm">
           ← CHIKCHIK 목록
         </Link>
         <PostActionButtons postId={id} authorId={post?.authorId || ""} />
@@ -46,68 +46,65 @@ export default async function PostDetailPage({ params }: Props) {
       <article className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         
         {/* 📝 게시글 헤더 영역 */}
-        <div className="p-10 border-b border-gray-50 bg-gray-50/30">
-          <h1 className="text-3xl md:text-4xl font-black text-gray-950 tracking-tight leading-tight mb-6">
+        <div className="p-6 md:p-10 border-b border-gray-50 bg-gray-50/30">
+          <h1 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight leading-tight mb-6">
             {post?.title}
           </h1>
           
-          <div className="flex flex-wrap items-center gap-y-3 gap-x-5 text-[13px]">
-            <div className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-[10px]">
+          {/* 💡 닉네임과 날짜를 한 줄로 배치 (양 끝 정렬) */}
+          <div className="flex items-center justify-between w-full text-[12px] md:text-[13px] mb-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-[10px] shrink-0">
                 {displayNickname.charAt(0)}
               </span>
-              <span className="font-bold text-gray-900">{displayNickname}</span>
+              {/* 닉네임이 길어도 화면을 뚫고 나가지 않게 truncate 처리 */}
+              <span className="font-bold text-gray-900 truncate">
+                {displayNickname}
+              </span>
             </div>
             
-            <span className="text-gray-200">|</span>
-            <span suppressHydrationWarning className="text-gray-400 font-medium">
+            <span suppressHydrationWarning className="text-gray-400 font-medium shrink-0 ml-4">
               {new Date(post?.createdAt).toLocaleString()}
             </span>
+          </div>
 
-            <span className="text-gray-200">|</span>
-            
-            {/* 📊 상단 메타 지표 세트 */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Views</span>
-                <span className="text-blue-600 font-black">{(post?.views || 0) + 1}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Comments</span>
-                <span className="text-blue-600 font-black">{comments.length}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-gray-400 font-black text-[10px] uppercase tracking-widest">Likes</span>
-                <span className="text-red-500 font-black">{post?.likeCount || 0}</span>
-              </div>
+          {/* 📊 하단 메타 지표 (조회수/댓글/좋아요) */}
+          <div className="flex items-center gap-4 pt-4 border-t border-gray-100/50">
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-400 font-black text-[9px] uppercase tracking-widest">Views</span>
+              <span className="text-blue-600 font-black text-xs">{(post?.views || 0) + 1}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-400 font-black text-[9px] uppercase tracking-widest">Comments</span>
+              <span className="text-blue-600 font-black text-xs">{comments.length}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-400 font-black text-[9px] uppercase tracking-widest">Likes</span>
+              <span className="text-red-500 font-black text-xs">{post?.likeCount || 0}</span>
             </div>
           </div>
         </div>
 
         {/* 📄 본문 내용 */}
-        <div className="p-10 text-gray-800 leading-relaxed text-lg whitespace-pre-wrap min-h-[250px]">
+        <div className="p-6 md:p-10 text-gray-800 leading-relaxed text-base md:text-lg whitespace-pre-wrap min-h-[200px]">
           {post?.content}
         </div>
 
         {/* ❤️ 좋아요 & 💬 댓글수 표시 영역 */}
-        <div className="flex flex-col items-center justify-center py-12 border-t border-gray-50 bg-gray-50/10 gap-4">
-          <div className="flex items-center gap-6">
-            {/* 좋아요 버튼 */}
+        <div className="flex flex-col items-center justify-center py-10 border-t border-gray-50 bg-gray-50/10 gap-4">
+          <div className="flex items-center gap-4 md:gap-6">
             <LikeButton 
               postId={id} 
               initialLikes={post?.likeCount || 0} 
               likedUsers={post?.likedUsers || []} 
             />
-            
-            {/* 💡 요청하신 하트 옆 댓글 숫자 표시! */}
-            <div className="flex flex-col items-center gap-1 px-8 py-3 rounded-[2rem] bg-gray-50 border border-gray-100">
-              <span className="text-2xl">💬</span>
-              <span className="text-lg font-black text-gray-900">{comments.length}</span>
+            <div className="flex flex-col items-center gap-1 px-6 md:px-8 py-2 md:py-3 rounded-[2rem] bg-gray-50 border border-gray-100">
+              <span className="text-xl md:text-2xl">💬</span>
+              <span className="text-base md:text-lg font-black text-gray-900">{comments.length}</span>
             </div>
           </div>
-          <p className="text-[11px] text-gray-300 font-black tracking-[0.2em] uppercase">ChikChik TalkTalk</p>
+          <p className="text-[10px] text-gray-300 font-black tracking-[0.2em] uppercase">ChikChik TalkTalk</p>
         </div>
-
       </article>
 
       {/* 💬 댓글 섹션 */}

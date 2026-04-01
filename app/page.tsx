@@ -34,7 +34,7 @@ export default async function HomePage() {
           </h1>
         </div>
         
-        {/* 💡 성지님이 수정한 힙한 문구! */}
+        {/* 힙한 브랜딩 문구 */}
         <p className="text-base sm:text-xl md:text-3xl text-gray-400 font-black tracking-tight mt-2 sm:mt-6">
           CHIKCHIK <span className="text-gray-900 break-keep">TALK & APP</span>
         </p>
@@ -67,14 +67,7 @@ export default async function HomePage() {
         )}
       </div>
 
-      {/* ⚙️ 관리자 숏컷 (숨김 모드) */}
-      {isLoggedIn && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 opacity-30 hover:opacity-100 transition-opacity z-10">
-          <a href="/admin/upload" className="text-gray-400 text-[10px] sm:text-xs font-bold px-3 py-2 hover:text-blue-600 hover:bg-blue-50 rounded-full bg-white/50 backdrop-blur-sm">
-            ⚙️ 관리자 페이지 가기 →
-          </a>
-        </div>
-      )}
+      {/* 💡 관리자 페이지 숏컷 링크를 완벽히 제거했습니다! */}
     </div>
   );
 }
