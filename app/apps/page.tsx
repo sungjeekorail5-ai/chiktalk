@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { adminDb } from "@/lib/firebase-admin";
+import AdminActions from "@/components/AdminActions"; // 💡 새로 만든 관리자 액션 버튼 불러오기!
 
 // 💡 [캐시 방지] 매번 서버에서 최신 앱 목록과 로그인 상태를 확인하도록 강제합니다.
 export const dynamic = "force-dynamic";
 
-// 📝 앱 데이터 타입 정의 (iconUrl 추가됨)
 interface AppData {
   id: string;
   title: string;
   description: string;
   version: string;
   fileUrl: string;
-  iconUrl?: string; // 💡 서버에서 새로 추가한 아이콘 주소
+  iconUrl?: string;
   requireLogin: boolean;
   createdAt: string;
 }
@@ -21,17 +21,14 @@ export default async function AppsPage() {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
 
-  // 💡 게스트가 아닌 로그인 유저는 무조건 Staff(직원)로 간주
   const isStaff = !!session && session !== "guest_session";
 
-  // 1️⃣ 파이어베이스에서 등록된 모든 앱 가져오기 (최신순)
   const snapshot = await adminDb.collection("apps").orderBy("createdAt", "desc").get();
   const allApps: AppData[] = snapshot.docs.map(doc => ({
     id: doc.id,
     ...(doc.data() as Omit<AppData, 'id'>)
   }));
 
-  // 2️⃣ 카테고리별로 분류 (공개 앱 vs 사내 전용)
   const freeApps = allApps.filter(app => !app.requireLogin);
   const staffApps = allApps.filter(app => app.requireLogin);
 
@@ -47,7 +44,6 @@ export default async function AppsPage() {
           칙칙톡톡 공식 애플리케이션 저장소
         </p>
 
-        {/* ⚙️ 관리자 전용 버튼: 직원(로그인 유저)에게만 노출 */}
         {isStaff && (
           <div className="pt-4 animate-fade-in">
             <a 
@@ -77,24 +73,30 @@ export default async function AppsPage() {
             {freeApps.length > 0 ? (
               freeApps.map((app) => (
                 <div key={app.id} className="flex items-center justify-between p-5 bg-gray-50 rounded-3xl border border-gray-100 hover:shadow-xl hover:bg-white transition-all group/item">
-                  <div className="flex items-center gap-4">
-                    {/* 💡 아이콘 렌더링: 이미지가 있으면 img, 없으면 기본 이모지 */}
-                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-110 transition-transform">
+                  
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="w-14 h-14 shrink-0 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-110 transition-transform mt-1">
                       {app.iconUrl ? (
                         <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-3xl">📱</span>
                       )}
                     </div>
-                    <div>
-                      <h3 className="font-black text-gray-900 text-lg">{app.title}</h3>
-                      <p className="text-[11px] text-gray-400 font-bold tracking-widest uppercase mb-1">{app.description}</p>
-                      <span className="text-[10px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full font-black">v{app.version}</span>
+                    <div className="flex-1 min-w-0 flex flex-col items-start">
+                      <h3 className="font-black text-gray-900 text-lg leading-tight break-keep">{app.title}</h3>
+                      <p className="text-[12px] text-gray-500 font-bold mt-1.5 mb-2 break-keep leading-snug">{app.description}</p>
+                      
+                      <div className="flex flex-col gap-2 w-full">
+                        <span className="text-[10px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full font-black w-max">v{app.version}</span>
+                        {/* 💡 관리자용 수정/삭제 버튼 노출 (공개 앱) */}
+                        {isStaff && <AdminActions appId={app.id} currentTitle={app.title} />}
+                      </div>
                     </div>
                   </div>
+                  
                   <a 
                     href={app.fileUrl} 
-                    className="bg-white border-2 border-gray-200 hover:border-blue-600 hover:text-blue-600 text-gray-700 px-5 py-2.5 rounded-2xl text-sm font-black transition-all active:scale-90"
+                    className="shrink-0 whitespace-nowrap ml-4 bg-white border-2 border-gray-200 hover:border-blue-600 hover:text-blue-600 text-gray-700 px-5 py-2.5 rounded-2xl text-sm font-black transition-all active:scale-90"
                   >
                     받기
                   </a>
@@ -124,24 +126,30 @@ export default async function AppsPage() {
               staffApps.length > 0 ? (
                 staffApps.map((app) => (
                   <div key={app.id} className="flex items-center justify-between p-5 bg-gray-900/50 rounded-3xl border border-gray-800 hover:border-blue-900 hover:bg-gray-900 transition-all group/item">
-                    <div className="flex items-center gap-4">
-                      {/* 💡 아이콘 렌더링: 이미지가 있으면 img, 없으면 기본 쉴드 이모지 */}
-                      <div className="w-14 h-14 bg-gray-800 text-gray-300 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-110 transition-transform">
+                    
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className="w-14 h-14 shrink-0 bg-gray-800 text-gray-300 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-110 transition-transform mt-1">
                         {app.iconUrl ? (
                           <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-3xl">🛡️</span>
                         )}
                       </div>
-                      <div>
-                        <h3 className="font-black text-white text-lg">{app.title}</h3>
-                        <p className="text-[11px] text-gray-500 font-bold tracking-widest uppercase mb-1">{app.description}</p>
-                        <span className="text-[10px] bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded-full font-black">v{app.version}</span>
+                      <div className="flex-1 min-w-0 flex flex-col items-start">
+                        <h3 className="font-black text-white text-lg leading-tight break-keep">{app.title}</h3>
+                        <p className="text-[12px] text-gray-400 font-bold mt-1.5 mb-2 break-keep leading-snug">{app.description}</p>
+                        
+                        <div className="flex flex-col gap-2 w-full">
+                          <span className="text-[10px] bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded-full font-black w-max">v{app.version}</span>
+                          {/* 💡 관리자용 수정/삭제 버튼 노출 (사내 전용 앱) */}
+                          {isStaff && <AdminActions appId={app.id} currentTitle={app.title} />}
+                        </div>
                       </div>
                     </div>
+
                     <a 
                       href={app.fileUrl} 
-                      className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-2xl text-sm font-black transition-all active:scale-90 shadow-lg shadow-blue-900/40"
+                      className="shrink-0 whitespace-nowrap ml-4 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-2xl text-sm font-black transition-all active:scale-90 shadow-lg shadow-blue-900/40"
                     >
                       받기
                     </a>
