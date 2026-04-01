@@ -7,38 +7,32 @@ interface Post {
   id: string;
   title: string;
   content: string;
-  author?: string;         // 예전 글들을 위한 예비용
-  authorNickname?: string; // 💡 새로 추가된 닉네임 필드
+  author?: string;
+  authorNickname?: string;
   createdAt: any;
-  views?: number;          // 💡 조회수 표시를 위해 새로 추가!
-  commentCount?: number;   // 💡 댓글 숫자 표시를 위해 추가!
+  views?: number;
+  commentCount?: number;
+  likeCount?: number; // 💡 좋아요 숫자 타입 추가
 }
 
-// 💡 마법의 시간 계산 함수 (방금 전, 5분 전, 2시간 전 등을 계산해줍니다)
+// 💡 마법의 시간 계산 함수
 function timeAgo(dateInput: any) {
   if (!dateInput) return "방금 전";
-
   let date: Date;
-  // 문자열 형태(ISO)로 들어온 경우
   if (typeof dateInput === "string") {
     date = new Date(dateInput);
-  } 
-  // 파이어베이스 Timestamp 객체로 들어온 경우 (예전 글 대비)
-  else if (dateInput.seconds) {
+  } else if (dateInput.seconds) {
     date = new Date(dateInput.seconds * 1000);
   } else {
     return "방금 전";
   }
-
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
   if (diffInSeconds < 60) return "방금 전";
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
   if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}일 전`;
-  
-  return date.toLocaleDateString(); // 한 달 이상 지나면 그냥 날짜로 표시
+  return date.toLocaleDateString();
 }
 
 export default function BoardPage() {
@@ -54,7 +48,6 @@ export default function BoardPage() {
       try {
         const res = await fetch("/api/board/list");
         const data = await res.json();
-        
         setPosts(data.posts || []);
         setIsLoggedIn(data.isLoggedIn);
         setCurrentUserId(data.userId || "");
@@ -72,19 +65,11 @@ export default function BoardPage() {
   const handleDelete = async (e: React.MouseEvent, postId: string) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (confirm("성지님, 이 글 진짜 지울까요? 🧹")) {
       try {
-        const res = await fetch(`/api/board/delete?id=${postId}`, {
-          method: "DELETE",
-        });
-
+        const res = await fetch(`/api/board/delete?id=${postId}`, { method: "DELETE" });
         if (res.ok) {
-          alert("깔끔하게 지웠습니다! 🚀");
           setPosts(posts.filter((p) => p.id !== postId));
-        } else {
-          const errorData = await res.json();
-          alert(errorData.message || "삭제 실패 ㅠㅠ 성지님 아이디가 맞나요?");
         }
       } catch (err) {
         alert("서버 오류가 발생했습니다.");
@@ -96,7 +81,6 @@ export default function BoardPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 md:py-10 px-0 md:px-4 space-y-4">
-      
       <div className="px-5 py-6 bg-white border-b border-gray-100 space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">자유게시판</h1>
@@ -118,13 +102,9 @@ export default function BoardPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[12px] font-bold">
-                      <span className="text-blue-600">
-                        {post.authorNickname || post.author || "익명 승객"}
-                      </span>
+                      <span className="text-blue-600">{post.authorNickname || post.author || "익명 승객"}</span>
                       <span className="text-gray-300">·</span>
-                      <span className="text-gray-400">
-                        {timeAgo(post.createdAt)}
-                      </span>
+                      <span className="text-gray-400">{timeAgo(post.createdAt)}</span>
                     </div>
 
                     {isAdmin && (
@@ -138,26 +118,23 @@ export default function BoardPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <h3 className="text-[17px] font-bold text-gray-900 leading-snug">
-                      {post.title}
-                    </h3>
-                    <p className="text-[14px] text-gray-500 line-clamp-2 leading-normal font-medium">
-                      {post.content}
-                    </p>
+                    <h3 className="text-[17px] font-bold text-gray-900 leading-snug">{post.title}</h3>
+                    <p className="text-[14px] text-gray-500 line-clamp-2 leading-normal font-medium">{post.content}</p>
                   </div>
 
+                  {/* 📊 지표 아이콘 영역 */}
                   <div className="flex items-center gap-4 pt-2">
                     <div className="flex items-center gap-1 text-gray-400">
                       <span className="text-[12px] font-bold">👀 {post.views || 0}</span>
                     </div>
                     
-                    {/* 💡 💬 0 대신 실제 숫자를 넣어줍니다! 댓글이 있으면 파란색으로 강조됩니다. */}
                     <div className={`flex items-center gap-1 ${post.commentCount ? 'text-blue-500' : 'text-gray-300'}`}>
                       <span className="text-[12px] font-bold">💬 {post.commentCount || 0}</span>
                     </div>
 
-                    <div className="flex items-center gap-1 text-gray-300">
-                      <span className="text-[12px] font-bold">👍 0</span>
+                    {/* 💡 좋아요 숫자 연동 완료! 좋아요가 있으면 빨간색으로 빛납니다. */}
+                    <div className={`flex items-center gap-1 ${post.likeCount ? 'text-red-500' : 'text-gray-300'}`}>
+                      <span className="text-[12px] font-bold">❤️ {post.likeCount || 0}</span>
                     </div>
                   </div>
                 </div>

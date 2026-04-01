@@ -9,9 +9,11 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[85vh] text-center px-4 sm:px-6 relative overflow-hidden">
       
+      {/* 🚄 메인 로고 및 타이틀 섹션 */}
       <div className="relative mb-6 group flex flex-col items-center w-full">
         
-        <div className="flex justify-center w-full mb-6 sm:mb-10 group-hover:animate-drift scale-75 sm:scale-100">
+        {/* 장식용 기차 궤적 애니메이션 */}
+        <div className="flex justify-center w-full mb-6 sm:mb-10 group-hover:animate-drift scale-75 sm:scale-100 transition-transform">
           <div className="w-12 sm:w-16 h-1 bg-gray-100 rounded-full mx-1"></div>
           <div className="w-20 sm:w-28 h-1.5 bg-blue-500 rounded-full mx-1 shadow-2xl shadow-blue-200"></div>
           
@@ -22,6 +24,7 @@ export default async function HomePage() {
           </div>
         </div>
         
+        {/* 메인 타이틀 */}
         <div className="flex items-center justify-center group-hover:animate-drift transition-all">
           <h1 className="text-5xl sm:text-7xl md:text-9xl font-black tracking-tighter leading-none mb-4 sm:mb-8 flex items-center justify-center">
             <span className="text-gray-950">칙칙</span><span className="text-blue-600 font-extrabold">톡톡</span>
@@ -31,11 +34,13 @@ export default async function HomePage() {
           </h1>
         </div>
         
+        {/* 💡 성지님이 수정한 힙한 문구! */}
         <p className="text-base sm:text-xl md:text-3xl text-gray-400 font-black tracking-tight mt-2 sm:mt-6">
-          대한민국 철도인 <span className="text-gray-900 break-keep">TALK & APP</span>
+          CHIKCHIK <span className="text-gray-900 break-keep">TALK & APP</span>
         </p>
       </div>
 
+      {/* 🚀 액션 버튼 섹션 */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 w-full max-w-[90%] sm:max-w-lg mt-8 sm:mt-12">
         {isLoggedIn ? (
           <>
@@ -62,6 +67,7 @@ export default async function HomePage() {
         )}
       </div>
 
+      {/* ⚙️ 관리자 숏컷 (숨김 모드) */}
       {isLoggedIn && (
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 opacity-30 hover:opacity-100 transition-opacity z-10">
           <a href="/admin/upload" className="text-gray-400 text-[10px] sm:text-xs font-bold px-3 py-2 hover:text-blue-600 hover:bg-blue-50 rounded-full bg-white/50 backdrop-blur-sm">

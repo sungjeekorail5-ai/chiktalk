@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/AuthContext"; 
 import Link from "next/link"; 
 
-// 🛠️ 게시글 수정/삭제 버튼
+// 🛠️ 1. 게시글 수정/삭제 버튼
 export function PostActionButtons({ postId, authorId }: { postId: string, authorId: string }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -35,7 +35,58 @@ export function PostActionButtons({ postId, authorId }: { postId: string, author
   );
 }
 
-// 💬 댓글 전체 영역
+// ❤️ 2. 좋아요 버튼 컴포넌트 (새로 추가!)
+export function LikeButton({ postId, initialLikes, likedUsers = [] }: { postId: string, initialLikes: number, likedUsers: string[] }) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [likes, setLikes] = useState(initialLikes);
+  const [isLiked, setIsLiked] = useState(user ? likedUsers.includes(user.id) : false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLike = async () => {
+    if (!user) return alert("로그인한 승객만 좋아요를 누를 수 있습니다! 🚂");
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/board/${postId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsLiked(data.liked);
+        setLikes(prev => data.liked ? prev + 1 : prev - 1);
+        router.refresh(); // 목록 페이지의 좋아요 숫자 갱신용
+      }
+    } catch (error) {
+      console.error("좋아요 오류:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex justify-center py-8">
+      <button
+        onClick={handleLike}
+        disabled={isLoading}
+        className={`flex items-center gap-3 px-10 py-4 rounded-full font-black transition-all shadow-sm active:scale-90 ${
+          isLiked 
+          ? "bg-red-50 text-red-500 border border-red-100" 
+          : "bg-gray-50 text-gray-400 border border-gray-100 hover:bg-gray-100"
+        }`}
+      >
+        <span className="text-2xl">{isLiked ? "❤️" : "🤍"}</span>
+        <span className="text-lg">{likes}</span>
+      </button>
+    </div>
+  );
+}
+
+// 💬 3. 댓글 전체 영역
 export function CommentSection({ postId, comments }: { postId: string, comments: any[] }) {
   const router = useRouter();
   const { user } = useAuth(); 
@@ -129,7 +180,6 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10">
       <h3 className="text-xl font-bold text-gray-900 mb-2">댓글 {comments.length}개</h3>
 
-      {/* 💡 1. 메인 댓글 입력창을 목록 위로 올렸습니다! */}
       {replyTo === null && renderForm(null)}
 
       <div className="space-y-6">
@@ -194,7 +244,6 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
                   </div>
                 ))}
               </div>
-              {/* 대댓글 입력창은 해당 댓글 바로 아래 뜨도록 유지 */}
               {replyTo === cmt.id && renderForm(cmt.id)}
             </div>
           ))
