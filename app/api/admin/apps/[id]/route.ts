@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 
 // 🗑️ [DELETE] 앱 삭제 API
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params; // 폴더 이름인 [id]에서 값을 가져옵니다.
+    // 💡 [핵심] 최신 Next.js 문법에 맞게 await로 params를 기다려줍니다!
+    const { id } = await params; 
+    
     await adminDb.collection("apps").doc(id).delete();
     return NextResponse.json({ success: true, message: "삭제 완료" });
   } catch (error) {
@@ -13,9 +15,10 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 }
 
 // 📝 [PATCH] 앱 정보 수정 API
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    // 💡 [핵심] 여기도 마찬가지로 await 추가!
+    const { id } = await params;
     const body = await req.json();
     
     await adminDb.collection("apps").doc(id).update({
