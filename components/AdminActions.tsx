@@ -18,7 +18,7 @@ export default function AdminActions({ appId, currentTitle }: { appId: string, c
   };
 
   const onEdit = () => {
-    router.push(`/admin/edit/${appId}`);
+    router.push(`/admin/edit/${appId}` as any);
   };
 
   return (
