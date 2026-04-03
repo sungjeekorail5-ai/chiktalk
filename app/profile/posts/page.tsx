@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { db } from "@/lib/firebase"; // 💡 파이어베이스 클라이언트 설정 파일 경로
+import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// 💡 게시글 데이터 타입 정의 (성지님 DB 구조에 맞게 수정 가능)
 interface Post {
   id: string;
   title: string;
@@ -22,19 +21,17 @@ export default function MyPostsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 유저 정보가 없으면 안 됨!
     if (!user) return;
 
     const fetchMyPosts = async () => {
       try {
-        // 🚨 중요: 'board' 부분은 실제 파이어베이스 컬렉션 이름으로 변경하세요! (예: 'posts', 'board' 등)
-        const postsRef = collection(db, "board"); 
+        // 💡 1. 서랍 이름 맞추기: 'board' -> 'posts'
+        const postsRef = collection(db, "posts"); 
         
-        // 🚨 중요: 'author' 부분은 실제 작성자 닉네임이 저장되는 필드명으로 변경하세요!
-        // 쿼리: 작성자가 내 닉네임과 일치하는 글만, 최신순으로 가져오기
+        // 💡 2. 이름표 맞추기: 'author' -> 'authorNickname'
         const q = query(
           postsRef,
-          where("author", "==", user.nickname), 
+          where("authorNickname", "==", user.nickname), 
           orderBy("createdAt", "desc")
         );
 
@@ -45,8 +42,9 @@ export default function MyPostsPage() {
         })) as Post[];
 
         setPosts(fetchedPosts);
-      } catch (error) {
+      } catch (error: any) {
         console.error("내 글을 불러오는 중 에러 발생:", error);
+        // 🚨 혹시 Firestore 인덱스 에러가 나면 콘솔창의 링크를 클릭해서 인덱스를 생성해주세요!
       } finally {
         setIsLoading(false);
       }
@@ -54,6 +52,14 @@ export default function MyPostsPage() {
 
     fetchMyPosts();
   }, [user]);
+
+  // 💡 3. 날짜 에러 방어 로직 (텍스트 날짜와 파이어베이스 날짜 모두 호환되게 처리)
+  const formatDate = (dateData: any) => {
+    if (!dateData) return '날짜 정보 없음';
+    if (typeof dateData === 'string') return new Date(dateData).toLocaleDateString();
+    if (dateData.toDate) return dateData.toDate().toLocaleDateString();
+    return '날짜 정보 없음';
+  };
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 animate-fade-in">
@@ -74,16 +80,14 @@ export default function MyPostsPage() {
       {/* 📋 게시글 리스트 영역 */}
       <div className="space-y-4">
         {isLoading ? (
-          // 로딩 중일 때
           <div className="text-center py-20 text-gray-400 font-bold">
             <span className="inline-block animate-spin mr-2">🔄</span> 글을 불러오는 중...
           </div>
         ) : posts.length > 0 ? (
-          // 내가 쓴 글이 있을 때
           posts.map((post) => (
             <Link 
               key={post.id} 
-              href={`/board/${post.id}`} // 💡 실제 게시판 상세 페이지 경로로 맞춰주세요!
+              href={`/board/${post.id}`} 
               className="block bg-white p-5 sm:p-6 rounded-[1.5rem] shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all active:scale-[0.98]"
             >
               <h3 className="text-lg font-black text-gray-900 truncate mb-2">
@@ -93,12 +97,11 @@ export default function MyPostsPage() {
                 {post.content}
               </p>
               <div className="text-[11px] font-bold text-gray-400">
-                {post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString() : '날짜 정보 없음'}
+                {formatDate(post.createdAt)}
               </div>
             </Link>
           ))
         ) : (
-          // 내가 쓴 글이 없을 때
           <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2rem] py-20 text-center">
             <div className="text-4xl mb-4 opacity-50">📭</div>
             <p className="text-sm sm:text-base text-gray-500 font-black mb-4">아직 작성하신 글이 없습니다.</p>
