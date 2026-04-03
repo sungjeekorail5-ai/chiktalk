@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 
 export default function WritePage() {
   const router = useRouter();
   
-  // 💡 [추가] 카테고리 상태 관리 (기본값: 자유게시판)
+  // 💡 상태 관리
   const [category, setCategory] = useState("free");
+  const [isNotice, setIsNotice] = useState(false); // 💡 공지사항 체크 상태
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   
@@ -16,6 +17,24 @@ export default function WritePage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 관리자 체크용
+  const [currentUserId, setCurrentUserId] = useState("");
+  const ADMIN_ID = "sungjee90";
+
+  // 💡 페이지 로드 시 관리자 여부 확인
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/board/list");
+        const data = await res.json();
+        setCurrentUserId(data.userId || "");
+      } catch (err) {
+        console.error("인증 정보 로딩 실패");
+      }
+    }
+    checkAuth();
+  }, []);
 
   // 📸 사진 압축 및 선택 함수
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,8 +85,8 @@ export default function WritePage() {
     setIsLoading(true);
 
     const formData = new FormData();
-    // 💡 [추가] 카테고리 정보도 폼 데이터에 담아서 서버로 보냅니다!
     formData.append("category", category);
+    formData.append("isNotice", String(isNotice)); // 💡 공지 여부 전송
     formData.append("title", title);
     formData.append("content", content);
     
@@ -105,7 +124,23 @@ export default function WritePage() {
 
       <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
         
-        {/* 💡 [추가] 게시판 카테고리 선택 드롭다운 */}
+        {/* 💡 [추가] 관리자 전용 공지 체크박스 */}
+        {currentUserId === ADMIN_ID && (
+          <div className="flex items-center gap-2 p-4 bg-blue-50/50 rounded-2xl border-2 border-dashed border-blue-100 transition-all hover:bg-blue-50">
+            <input 
+              type="checkbox" 
+              id="notice" 
+              checked={isNotice} 
+              onChange={(e) => setIsNotice(e.target.checked)}
+              className="w-5 h-5 accent-blue-600 cursor-pointer"
+            />
+            <label htmlFor="notice" className="text-sm font-black text-blue-700 cursor-pointer select-none">
+              이 글을 중요 공지사항으로 등록 (최상단 고정) 📌
+            </label>
+          </div>
+        )}
+
+        {/* 💡 게시판 카테고리 선택 */}
         <div className="space-y-2">
           <label className="block text-sm md:text-base font-black text-gray-700 ml-1">
             게시판 선택
@@ -117,10 +152,9 @@ export default function WritePage() {
               className="w-full px-4 md:px-5 py-3 md:py-4 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-base md:text-lg transition-all appearance-none bg-white cursor-pointer"
               required
             >
-              <option value="free">💬 게시판</option>
+              <option value="free">💬 자유게시판</option>
               <option value="inquiry">🙋‍♂️ 앱 문의사항</option>
             </select>
-            {/* 커스텀 화살표 아이콘 */}
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-gray-500">
               ▼
             </div>
@@ -142,7 +176,7 @@ export default function WritePage() {
           />
         </div>
         
-        {/* 💡 내용 입력창 (placeholder 제거) */}
+        {/* 💡 내용 입력창 */}
         <div className="space-y-2">
           <label className="block text-sm md:text-base font-black text-gray-700 ml-1">
             내용
@@ -173,7 +207,7 @@ export default function WritePage() {
             />
           </div>
 
-          {/* 미리보기 영역 (모바일에서 3열로 조절) */}
+          {/* 미리보기 영역 */}
           {previews.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3 pt-2">
               {previews.map((url, index) => (

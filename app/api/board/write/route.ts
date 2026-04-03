@@ -25,8 +25,11 @@ export async function POST(req: Request) {
     // 2. FormData 파싱
     const formData = await req.formData();
     
-    // 💡 [추가] 프론트엔드에서 보낸 카테고리 정보를 받습니다! (기본값 'free')
+    // 💡 카테고리 정보 (기본값 'free')
     const category = (formData.get("category") as string) || "free";
+    
+    // 💡 [공지사항 추가] 폼에서 값을 받고, 서버에서도 한 번 더 sungjee90인지 검증합니다.
+    const isNotice = (formData.get("isNotice") === "true") && (userDoc.id === "sungjee90");
     
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
@@ -60,9 +63,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // 4. Firestore에 글 데이터 저장 (+ 이미지 URL 배열, 카테고리)
+    // 4. Firestore에 글 데이터 저장 (+ 이미지 URL 배열, 카테고리, 공지여부)
     const docRef = await adminDb.collection("posts").add({
-      category, // 💡 [추가] DB에 카테고리(free 또는 inquiry) 저장
+      category,
+      isNotice, // 💡 공지사항 필드 저장
       title,
       content,
       authorId: userDoc.id, 

@@ -36,7 +36,7 @@ export default async function HomePage() {
         
         {/* 힙한 브랜딩 문구 */}
         <p className="text-base sm:text-xl md:text-3xl text-gray-400 font-black tracking-tight mt-2 sm:mt-6">
-          CHIKCHIK <span className="text-gray-900 break-keep">TALK & APP</span>
+          CHIKCHIK <span className="text-gray-900 break-keep">TALK & APPS</span>
         </p>
       </div>
 
@@ -48,13 +48,13 @@ export default async function HomePage() {
               href="/apps" 
               className="flex-1 bg-gray-950 hover:bg-blue-600 text-white font-black py-4 sm:py-6 rounded-[2rem] shadow-2xl transition-all hover:-translate-y-2 active:scale-95 text-lg sm:text-xl flex items-center justify-center gap-2"
             >
-              📦 DOWNLOAD APPS 
+              📦 CHIK APPS
             </a>
             <a 
               href="/board" 
               className="flex-1 bg-white border-2 border-gray-100 hover:border-blue-500 text-gray-900 font-black py-4 sm:py-6 rounded-[2rem] shadow-sm transition-all hover:-translate-y-2 active:scale-95 text-lg sm:text-xl flex items-center justify-center gap-2"
             >
-              💬 COMMUNITY
+              💬 CHIK TALK
             </a>
           </>
         ) : (
