@@ -168,7 +168,7 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10 mb-32">
       <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-6">댓글 {comments.length}개</h3>
 
-      {/* 댓글 목록 출력 영역 (성지님 원본 스타일 유지) */}
+      {/* 댓글 목록 출력 영역 */}
       <div className="space-y-6">
         {topLevelComments.length === 0 ? (
           <p className="text-gray-400 text-sm text-center py-10">아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요!</p>

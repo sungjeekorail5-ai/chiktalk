@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
-    // 1. 로그인 확인 및 세션 검증 (💡 여기서 튕기던 문제 해결!)
+    // 1. 로그인 확인 및 세션 검증
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
     
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "정식 탑승객만 글을 쓸 수 있습니다! 🎫" }, { status: 401 });
     }
 
-    // 💡 sessionCookie가 이제 users 컬렉션의 문서 ID입니다. (sessions 컬렉션 아님!)
+    // 💡 sessionCookie가 이제 users 컬렉션의 문서 ID입니다.
     const userDoc = await adminDb.collection("users").doc(sessionCookie).get();
     
     if (!userDoc.exists) {
@@ -24,6 +24,10 @@ export async function POST(req: Request) {
 
     // 2. FormData 파싱
     const formData = await req.formData();
+    
+    // 💡 [추가] 프론트엔드에서 보낸 카테고리 정보를 받습니다! (기본값 'free')
+    const category = (formData.get("category") as string) || "free";
+    
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
     const imageFiles = formData.getAll("images") as File[]; 
@@ -56,11 +60,12 @@ export async function POST(req: Request) {
       }
     }
 
-    // 4. Firestore에 글 데이터 저장 (+ 이미지 URL 배열)
+    // 4. Firestore에 글 데이터 저장 (+ 이미지 URL 배열, 카테고리)
     const docRef = await adminDb.collection("posts").add({
+      category, // 💡 [추가] DB에 카테고리(free 또는 inquiry) 저장
       title,
       content,
-      authorId: userDoc.id, // 💡 문서 ID를 바로 작성자 ID로 사용합니다.
+      authorId: userDoc.id, 
       authorNickname: userData?.nickname || "익명",
       createdAt: new Date().toISOString(),
       views: 0,

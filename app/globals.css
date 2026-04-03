@@ -25,7 +25,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* 🚄 성지님의 기차를 움직이게 할 마법 코드 */
+/* 🚄 
 @layer utilities {
   @keyframes drift {
     0% { transform: translateX(0); }

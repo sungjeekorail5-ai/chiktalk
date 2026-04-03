@@ -13,10 +13,10 @@ export async function DELETE(request: Request) {
     // 👑 [슈퍼 관리자 아이디 설정]
     const ADMIN_ID = "sungjee90"; 
 
-    // 💡 권한 검사: 성지님 아이디가 아니면 절대 삭제 불가!
+    // 💡 권한 검사
     if (!session || session !== ADMIN_ID) {
       return NextResponse.json(
-        { message: "성지님(sungjee90)만 삭제 권한이 있습니다! 🧐" }, 
+        { message: "관리자(sungjee90)만 삭제 권한이 있습니다! 🧐" }, 
         { status: 403 }
       );
     }

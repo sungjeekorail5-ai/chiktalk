@@ -35,7 +35,7 @@ export default function AppUploadPage() {
 
   // 💡 [핵심] Vercel 안 거치고 파이어베이스 스토리지로 40MB 다이렉트 슛!
   const uploadToFirebaseDirectly = async (fileToUpload: File, folder: string) => {
-    const bucket = "tristan-archive.firebasestorage.app"; // 성지님 버킷 주소
+    const bucket = "tristan-archive.firebasestorage.app";
     const fileName = `${Date.now()}_${fileToUpload.name}`;
     const encodedPath = encodeURIComponent(`${folder}/${fileName}`);
     const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodedPath}`;

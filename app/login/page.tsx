@@ -31,8 +31,6 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // 💡 [핵심] 서버가 준 data.nickname을 AuthContext에 저장합니다.
-        // 성지님이 DB에 넣은 "🚄 성지"가 바로 이 data.nickname으로 들어옵니다.
         login(idValue, data.nickname); 
         
         // 💡 페이지 이동 전 강제 새로고침 효과를 주어 레이아웃이 정보를 새로 읽게 합니다.

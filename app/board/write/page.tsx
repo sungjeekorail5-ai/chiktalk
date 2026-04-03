@@ -6,6 +6,9 @@ import imageCompression from "browser-image-compression";
 
 export default function WritePage() {
   const router = useRouter();
+  
+  // 💡 [추가] 카테고리 상태 관리 (기본값: 자유게시판)
+  const [category, setCategory] = useState("free");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   
@@ -63,6 +66,8 @@ export default function WritePage() {
     setIsLoading(true);
 
     const formData = new FormData();
+    // 💡 [추가] 카테고리 정보도 폼 데이터에 담아서 서버로 보냅니다!
+    formData.append("category", category);
     formData.append("title", title);
     formData.append("content", content);
     
@@ -91,7 +96,6 @@ export default function WritePage() {
   };
 
   return (
-    // 💡 px-4를 주어 모바일에서 양옆이 화면에 딱 붙지 않게 여유를 줍니다.
     <div className="max-w-2xl mx-auto py-6 md:py-10 px-4 space-y-6 md:space-y-8">
       
       {/* 💡 상단 타이틀 */}
@@ -100,25 +104,58 @@ export default function WritePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+        
+        {/* 💡 [추가] 게시판 카테고리 선택 드롭다운 */}
+        <div className="space-y-2">
+          <label className="block text-sm md:text-base font-black text-gray-700 ml-1">
+            게시판 선택
+          </label>
+          <div className="relative">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 md:px-5 py-3 md:py-4 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-base md:text-lg transition-all appearance-none bg-white cursor-pointer"
+              required
+            >
+              <option value="free">💬 자유게시판</option>
+              <option value="inquiry">🙋‍♂️ 앱 문의사항</option>
+            </select>
+            {/* 커스텀 화살표 아이콘 */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-gray-500">
+              ▼
+            </div>
+          </div>
+        </div>
+
         {/* 💡 제목 입력창 */}
-        <input
-          type="text" 
-          placeholder="제목을 입력하세요" 
-          value={title} 
-          onChange={e => setTitle(e.target.value)} 
-          required
-          className="w-full px-4 md:px-5 py-3 md:py-4 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-base md:text-lg transition-all"
-        />
+        <div className="space-y-2">
+          <label className="block text-sm md:text-base font-black text-gray-700 ml-1">
+            제목
+          </label>
+          <input
+            type="text" 
+            placeholder="제목을 입력하세요" 
+            value={title} 
+            onChange={e => setTitle(e.target.value)} 
+            required
+            className="w-full px-4 md:px-5 py-3 md:py-4 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-base md:text-lg transition-all"
+          />
+        </div>
         
         {/* 💡 내용 입력창 (placeholder 제거) */}
-        <textarea
-          placeholder="" 
-          value={content} 
-          onChange={e => setContent(e.target.value)} 
-          required 
-          rows={12}
-          className="w-full px-4 md:px-5 py-3 md:py-4 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm md:text-base whitespace-pre-wrap leading-relaxed min-h-[300px]"
-        />
+        <div className="space-y-2">
+          <label className="block text-sm md:text-base font-black text-gray-700 ml-1">
+            내용
+          </label>
+          <textarea
+            placeholder="" 
+            value={content} 
+            onChange={e => setContent(e.target.value)} 
+            required 
+            rows={12}
+            className="w-full px-4 md:px-5 py-3 md:py-4 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm md:text-base whitespace-pre-wrap leading-relaxed min-h-[300px]"
+          />
+        </div>
 
         {/* 📸 사진 첨부 영역 */}
         <div className="space-y-4 bg-gray-50 p-4 md:p-6 rounded-3xl border border-gray-100">
@@ -159,7 +196,7 @@ export default function WritePage() {
           <p className="text-[10px] md:text-xs text-gray-400 font-medium">※ 사진 한 장당 최대 5MB까지 첨부 가능합니다. (자동 압축)</p>
         </div>
 
-        {/* 💡 등록 버튼 (튕김 방지 처리) */}
+        {/* 💡 등록 버튼 */}
         <div className="pt-2">
           <button 
             type="submit" 

@@ -66,7 +66,7 @@ export default function ProfilePage() {
               {isStaff ? 'STAFF' : 'GUEST'}
             </span>
             
-            {/* 👑 관리자 권한은 별도로 표시 (성지님 계정일 때만) */}
+            {/* 👑 관리자 권한은 별도로 표시 */}
             {(user as any)?.role === 'admin' && (
               <span className="text-[10px] font-black px-2.5 py-1 rounded-md bg-purple-100 text-purple-600 border border-purple-200">
                 ADMIN

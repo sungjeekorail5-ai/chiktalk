@@ -19,7 +19,6 @@ export async function GET() {
     }));
 
     // 2️⃣ 💡 [핵심] 현재 로그인한 유저 정보 전달
-    // 성지님 시스템에서 세션 값이 곧 아이디라면 그대로 전달합니다.
     const userId = session || ""; 
     const isLoggedIn = !!session && session !== "guest_session";
 

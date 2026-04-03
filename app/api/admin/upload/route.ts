@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin"; // 성지님 경로에 맞게 확인해주세요!
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
   try {
