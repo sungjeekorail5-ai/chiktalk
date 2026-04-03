@@ -7,9 +7,9 @@ import Link from "next/link";
 export default function SignUpPage() {
   const router = useRouter();
 
-  // 📝 입력 상태 관리 (nickname 추가!)
+  // 📝 입력 상태 관리
   const [id, setId] = useState("");
-  const [nickname, setNickname] = useState(""); // 💡 닉네임 상태 추가
+  const [nickname, setNickname] = useState(""); 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +26,7 @@ export default function SignUpPage() {
 
   // 💡 유효성 검사 규칙
   const idRegex = /^[a-z0-9]{4,12}$/; 
-  const nicknameRegex = /^[가-힣a-zA-Z0-9]{2,10}$/; // 💡 한글/영문/숫자 2~10자
+  const nicknameRegex = /^[가-힣a-zA-Z0-9]{2,10}$/; 
   const pwRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,20}$/; 
 
   // ⏱️ 타이머 로직
@@ -95,7 +95,6 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 💡 유효성 검사에 닉네임 추가
     if (!idRegex.test(id)) return setMessage({ text: "아이디 형식이 올바르지 않습니다.", type: "error" });
     if (!nicknameRegex.test(nickname)) return setMessage({ text: "닉네임은 한글/영문/숫자 2~10자여야 합니다.", type: "error" });
     if (!isCodeVerified) return setMessage({ text: "이메일 인증을 완료해주세요.", type: "error" });
@@ -107,7 +106,6 @@ export default function SignUpPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // 💡 백엔드 파일에 맞게 username(아이디), nickname(닉네임), email 전송
         body: JSON.stringify({ username: id, nickname, email, password }),
       });
       if (res.ok) {
@@ -126,7 +124,7 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
+      <div className="w-full max-w-md bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
         
         <div className="text-center mb-10">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">
@@ -153,7 +151,7 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          {/* 💡 [신규 추가] 2️⃣ 닉네임 입력 */}
+          {/* 2️⃣ 닉네임 입력 */}
           <div className="space-y-2">
             <label className="text-sm font-black text-gray-900">닉네임</label>
             <input
@@ -169,32 +167,35 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          {/* 3️⃣ 이메일 인증 영역 */}
+          {/* 3️⃣ 이메일 인증 영역 (💡 모바일 튕김 방지 적용!) */}
           <div className="space-y-2">
             <label className="text-sm font-black text-gray-900">이메일 인증</label>
-            <div className="flex gap-2">
+            {/* 💡 flex-col (모바일 세로) -> sm:flex-row (PC 가로) */}
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="철도 이메일 입력"
                 disabled={isCodeVerified}
-                className="flex-1 px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-bold disabled:opacity-50"
+                className="w-full sm:flex-1 px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-bold disabled:opacity-50"
                 required
               />
               <button
                 type="button"
                 onClick={handleSendCode}
                 disabled={isLoading || isCodeVerified || !email}
-                className="px-6 bg-gray-900 hover:bg-blue-600 text-white font-black rounded-2xl text-sm transition-colors whitespace-nowrap disabled:opacity-50"
+                // 💡 w-full(모바일 꽉차게) sm:w-auto(PC 자기크기), 그리고 높이를 인풋창(py-4)과 맞췄습니다!
+                className="w-full sm:w-auto shrink-0 px-6 py-4 bg-gray-900 hover:bg-blue-600 text-white font-black rounded-2xl text-sm transition-colors whitespace-nowrap disabled:opacity-50 active:scale-95"
               >
                 {isCodeSent ? "재전송" : "인증요청"}
               </button>
             </div>
 
             {isCodeSent && !isCodeVerified && (
-              <div className="flex gap-2 mt-2 animate-fade-in">
-                <div className="relative flex-1">
+              // 💡 인증번호 입력칸도 동일하게 모바일 튕김 방지 적용
+              <div className="flex flex-col sm:flex-row gap-2 mt-2 animate-fade-in">
+                <div className="relative w-full sm:flex-1">
                   <input
                     type="text"
                     value={code}
@@ -210,7 +211,7 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={handleVerifyCode}
-                  className="px-6 bg-blue-100 text-blue-600 hover:bg-blue-200 font-black rounded-2xl text-sm transition-colors whitespace-nowrap"
+                  className="w-full sm:w-auto shrink-0 px-6 py-4 bg-blue-100 text-blue-600 hover:bg-blue-200 font-black rounded-2xl text-sm transition-colors whitespace-nowrap active:scale-95"
                 >
                   확인
                 </button>

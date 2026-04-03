@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "../lib/AuthContext";
 import NavbarClient from "../components/NavbarClient";
+import BottomNav from "../components/BottomNav"; // 💡 새롭게 추가한 하단 탭 바 컴포넌트
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -47,20 +48,26 @@ export default async function RootLayout({
               </Link>
 
               <div className="flex items-center gap-2 sm:gap-6 text-xs sm:text-sm font-bold text-gray-600">
-                <a href="/apps" className="hover:text-blue-600 transition-colors uppercase tracking-wider">Apps</a>
-                <a href="/board" className="hover:text-blue-600 transition-colors uppercase tracking-wider">Board</a>
+                {/* 💡 모바일에서는 하단 탭 바가 있으니, 상단의 Apps와 Board는 PC(md)에서만 보이도록 hidden md:inline을 추가했습니다! */}
+                <a href="/apps" className="hover:text-blue-600 transition-colors uppercase tracking-wider hidden md:inline">Apps</a>
+                <a href="/board" className="hover:text-blue-600 transition-colors uppercase tracking-wider hidden md:inline">Board</a>
                 
                 <span className="hidden md:inline text-gray-300">|</span>
                 
-                {/* 💡 로그인 버튼 & 닉네임 영역을 클라이언트 컴포넌트로 교체! */}
+                {/* 💡 로그인 버튼 & 닉네임 영역 */}
                 <NavbarClient isLoggedIn={isLoggedIn} isRealUser={isRealUser} />
               </div>
             </div>
           </nav>
 
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-10">
+          {/* 💡 pb-24 md:pb-10을 주어 모바일 하단바에 콘텐츠가 가려지지 않게 보호하고, PC에서는 여백을 줄입니다. */}
+          {/* div 대신 웹 표준에 맞게 main 태그로 변경하고 min-h-screen을 추가했습니다. */}
+          <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-10 pb-24 md:pb-10 min-h-screen">
             {children}
-          </div>
+          </main>
+
+          {/* 🚀 모바일 전용 하단 고정 탭 바 등판! */}
+          <BottomNav />
         </AuthProvider>
       </body>
     </html>
