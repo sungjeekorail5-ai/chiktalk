@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/AuthContext";
+import Link from "next/link"; 
 
 export default function NavbarClient({ isLoggedIn, isRealUser }: { isLoggedIn: boolean, isRealUser: boolean }) {
   const { user, logout } = useAuth();
@@ -31,6 +32,14 @@ export default function NavbarClient({ isLoggedIn, isRealUser }: { isLoggedIn: b
         {isRealUser ? 'STAFF' : 'GUEST'}
       </span>
       
+      {/* 🚀 [신규 추가] PC 웹용 '내 정보' 버튼 */}
+      <Link 
+        href={"/profile" as any}
+        className="hidden md:flex items-center justify-center bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all whitespace-nowrap font-bold text-sm shadow-sm"
+      >
+        내 정보 🎫
+      </Link>
+
       <button 
         onClick={logout}
         className="bg-gray-100 text-gray-600 px-2 sm:px-4 py-1.5 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap font-bold"
