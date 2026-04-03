@@ -1,23 +1,32 @@
 import { NextResponse } from "next/server";
-import { adminDb, adminStorage } from "@/lib/firebase-admin"; // 💡 스토리지 임포트 확인!
+import { adminDb, adminStorage } from "@/lib/firebase-admin"; 
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
-    // 1. 로그인 확인
+    // 1. 로그인 확인 및 세션 검증 (💡 여기서 튕기던 문제 해결!)
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
-    if (!sessionCookie) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
+    
+    // 🚨 세션이 아예 없거나, 비회원(게스트)이면 쫓아냅니다.
+    if (!sessionCookie || sessionCookie === "guest_session") {
+      return NextResponse.json({ message: "정식 탑승객만 글을 쓸 수 있습니다! 🎫" }, { status: 401 });
+    }
 
-    const sessionDoc = await adminDb.collection("sessions").doc(sessionCookie).get();
-    if (!sessionDoc.exists) return NextResponse.json({ message: "세션 만료" }, { status: 401 });
-    const userData = sessionDoc.data();
+    // 💡 sessionCookie가 이제 users 컬렉션의 문서 ID입니다. (sessions 컬렉션 아님!)
+    const userDoc = await adminDb.collection("users").doc(sessionCookie).get();
+    
+    if (!userDoc.exists) {
+      return NextResponse.json({ message: "세션이 만료되었습니다. 다시 로그인해주세요." }, { status: 401 });
+    }
+    
+    const userData = userDoc.data();
 
     // 2. FormData 파싱
     const formData = await req.formData();
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
-    const imageFiles = formData.getAll("images") as File[]; // 'images' 키로 담긴 파일들
+    const imageFiles = formData.getAll("images") as File[]; 
 
     if (!title || !content) return NextResponse.json({ message: "데이터 부족" }, { status: 400 });
 
@@ -41,7 +50,6 @@ export async function POST(req: Request) {
         });
 
         // 💡 중요: 업로드 후 '공개 다운로드 URL' 가져오기
-        // Vercel 환경에서는 getSignedUrl보다 이게 더 간편하고 비용이 적게 듭니다.
         await fileRef.makePublic(); 
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileRef.name}`;
         imageUrls.push(publicUrl);
@@ -52,19 +60,19 @@ export async function POST(req: Request) {
     const docRef = await adminDb.collection("posts").add({
       title,
       content,
-      authorId: userData?.uid,
-      authorNickname: userData?.nickname,
+      authorId: userDoc.id, // 💡 문서 ID를 바로 작성자 ID로 사용합니다.
+      authorNickname: userData?.nickname || "익명",
       createdAt: new Date().toISOString(),
       views: 0,
       commentCount: 0,
       likeCount: 0,
       likedUsers: [],
-      images: imageUrls, // 💡 여기에 URL 배열이 들어갑니다!
+      images: imageUrls, 
     });
 
     return NextResponse.json({ message: "등록 완료", id: docRef.id }, { status: 200 });
   } catch (error) {
     console.error("🔥 글 쓰기 API 에러:", error);
-    return NextResponse.json({ message: "서버 오류" }, { status: 500 });
+    return NextResponse.json({ message: "서버 오류가 발생했습니다." }, { status: 500 });
   }
 }
