@@ -21,6 +21,14 @@ export default async function AppsPage() {
   const cookieStore = await cookies();
   const session = cookieStore.get("session")?.value;
 
+  // 👑 [왕의 징표] 성지님의 Firestore 문서 ID를 여기에 넣으세요!
+  // 아까 찾으신 sungjee90 데이터의 그 긴 문서 ID 문자열을 넣으면 됩니다.
+  const ADMIN_SESSION_ID = "여기에_성지님_문서_ID_복붙"; 
+
+  // 1. 성지님 본인만 관리자 권한 (버튼 노출용)
+  const isAdmin = session === ADMIN_SESSION_ID;
+  
+  // 2. 코레일 직원 전체 권한 (스태프 전용 앱 접근용)
   const isStaff = !!session && session !== "guest_session";
 
   const snapshot = await adminDb.collection("apps").orderBy("createdAt", "desc").get();
@@ -44,7 +52,8 @@ export default async function AppsPage() {
           칙칙톡톡 공식 애플리케이션 저장소
         </p>
 
-        {isStaff && (
+        {/* 🚀 오직 성지님(ADMIN)에게만 보이는 새 앱 등록 버튼 */}
+        {isAdmin && (
           <div className="pt-4 animate-fade-in">
             <a 
               href="/admin/upload" 
@@ -74,9 +83,7 @@ export default async function AppsPage() {
               freeApps.map((app) => (
                 <div key={app.id} className="flex flex-col p-4 sm:p-5 bg-gray-50 rounded-3xl border border-gray-100 hover:shadow-xl hover:bg-white transition-all group/item">
                   
-                  {/* 🚀 [개선 포인트] 1. 메인 정보 영역 (가로 꽉 채워서 절대 안 찌그러짐) */}
                   <div className="flex items-center gap-3 sm:gap-4 w-full">
-                    {/* 앱 아이콘 */}
                     <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-105 transition-transform">
                       {app.iconUrl ? (
                         <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" />
@@ -85,7 +92,6 @@ export default async function AppsPage() {
                       )}
                     </div>
                     
-                    {/* 앱 이름 & 설명 (truncate로 한 줄 고정) */}
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <h3 className="font-black text-gray-900 text-base sm:text-lg leading-tight truncate">{app.title}</h3>
                       <p className="text-[11px] sm:text-xs text-gray-500 font-bold mt-0.5 mb-1.5 truncate">{app.description}</p>
@@ -94,7 +100,6 @@ export default async function AppsPage() {
                       </div>
                     </div>
                     
-                    {/* 다운로드 버튼 */}
                     <a 
                       href={app.fileUrl} 
                       className="shrink-0 bg-white border-2 border-gray-200 hover:border-blue-600 hover:text-blue-600 text-gray-700 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95"
@@ -103,8 +108,8 @@ export default async function AppsPage() {
                     </a>
                   </div>
 
-                  {/* 🚀 [개선 포인트] 2. 관리자 버튼 분리 (선 아래에 조용히 배치) */}
-                  {isStaff && (
+                  {/* 🚀 관리자 전용 수정/삭제 (성지님만 보임) */}
+                  {isAdmin && (
                     <div className="mt-3 pt-3 border-t border-gray-200/70 flex justify-end">
                       <AdminActions appId={app.id} currentTitle={app.title} />
                     </div>
@@ -137,7 +142,6 @@ export default async function AppsPage() {
                 staffApps.map((app) => (
                   <div key={app.id} className="flex flex-col p-4 sm:p-5 bg-gray-900/50 rounded-3xl border border-gray-800 hover:border-blue-900 hover:bg-gray-900 transition-all group/item">
                     
-                    {/* 🚀 Staff 앱 메인 정보 */}
                     <div className="flex items-center gap-3 sm:gap-4 w-full">
                       <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 bg-gray-800 text-gray-300 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-105 transition-transform">
                         {app.iconUrl ? (
@@ -163,8 +167,8 @@ export default async function AppsPage() {
                       </a>
                     </div>
 
-                    {/* 🚀 Staff 앱 관리자 버튼 분리 */}
-                    {isStaff && (
+                    {/* 🚀 관리자 전용 수정/삭제 (성지님만 보임) */}
+                    {isAdmin && (
                       <div className="mt-3 pt-3 border-t border-gray-800 flex justify-end">
                         <AdminActions appId={app.id} currentTitle={app.title} />
                       </div>
