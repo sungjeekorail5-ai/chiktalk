@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "칙칙톡톡 | 대한민국 철도 TALK & APP",
-  description: "대한민국 철도 사내 애플리케이션 및 자유게시판",
+  description: "철도 사내 애플리케이션 및 자유게시판",
 };
 
 export default async function RootLayout({

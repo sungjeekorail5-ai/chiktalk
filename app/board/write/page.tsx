@@ -117,7 +117,7 @@ export default function WritePage() {
               className="w-full px-4 md:px-5 py-3 md:py-4 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-base md:text-lg transition-all appearance-none bg-white cursor-pointer"
               required
             >
-              <option value="free">💬 자유게시판</option>
+              <option value="free">💬 게시판</option>
               <option value="inquiry">🙋‍♂️ 앱 문의사항</option>
             </select>
             {/* 커스텀 화살표 아이콘 */}

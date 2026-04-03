@@ -48,13 +48,13 @@ export default async function HomePage() {
               href="/apps" 
               className="flex-1 bg-gray-950 hover:bg-blue-600 text-white font-black py-4 sm:py-6 rounded-[2rem] shadow-2xl transition-all hover:-translate-y-2 active:scale-95 text-lg sm:text-xl flex items-center justify-center gap-2"
             >
-              📦 앱 보관함
+              📦 DOWNLOAD APPS 
             </a>
             <a 
               href="/board" 
               className="flex-1 bg-white border-2 border-gray-100 hover:border-blue-500 text-gray-900 font-black py-4 sm:py-6 rounded-[2rem] shadow-sm transition-all hover:-translate-y-2 active:scale-95 text-lg sm:text-xl flex items-center justify-center gap-2"
             >
-              💬 자유게시판
+              💬 COMMUNITY
             </a>
           </>
         ) : (

@@ -105,7 +105,7 @@ export default function BoardPage() {
             </Link>
           )}
         </div>
-        <p className="text-sm text-gray-400 font-medium">탑승객들의 다양한 이야기가 모이는 곳</p>
+        <p className="text-sm text-gray-400 font-medium">다양한 이야기가 모이는 곳</p>
         
         {/* 📑 탭 버튼 영역 */}
         <div className="flex border-t border-gray-100 pt-2 mt-4">
