@@ -21,6 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { id } = await params;
     const body = await req.json();
     
+    // 프론트에서 보낸 데이터(...body)를 그대로 파이어베이스에 업데이트
     await adminDb.collection("apps").doc(id).update({
       ...body,
       updatedAt: new Date().toISOString(),

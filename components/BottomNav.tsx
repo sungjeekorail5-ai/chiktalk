@@ -9,7 +9,7 @@ export default function BottomNav() {
   // 💡 메뉴 리스트 (원하시는 메뉴로 자유롭게 수정 가능!)
   const navItems = [
     { name: "홈", path: "/", icon: "🏠" },
-    { name: "자유게시판", path: "/board", icon: "💬" },
+    { name: "게시판", path: "/board", icon: "💬" },
     { name: "앱 보관함", path: "/apps", icon: "📦" },
     { name: "내 정보", path: "/profile", icon: "👤" },
   ];

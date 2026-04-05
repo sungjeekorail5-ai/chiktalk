@@ -7,17 +7,23 @@ import Link from "next/link";
 export default function AppUploadPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(""); // 💡 진행 상황 표시용
+  const [uploadProgress, setUploadProgress] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  // 💡 [추가] 앱 상세 설명 (긴 글)
+  const [detailedDescription, setDetailedDescription] = useState("");
   const [version, setVersion] = useState("1.0.0");
   const [requireLogin, setRequireLogin] = useState(false);
   
   const [file, setFile] = useState<File | null>(null);
   const [icon, setIcon] = useState<File | null>(null);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
+
+  // 💡 [추가] 인앱 스크린샷 이미지 배열 (여러 장)
+  const [screenshots, setScreenshots] = useState<File[]>([]);
+  const [screenshotPreviews, setScreenshotPreviews] = useState<string[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -33,7 +39,23 @@ export default function AppUploadPage() {
     }
   };
 
-  // 💡 [핵심] Vercel 안 거치고 파이어베이스 스토리지로 40MB 다이렉트 슛!
+  // 💡 [추가] 스크린샷 여러 장 첨부 핸들러
+  const handleScreenshotsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setScreenshots((prev) => [...prev, ...filesArray]);
+      
+      const previewsArray = filesArray.map(file => URL.createObjectURL(file));
+      setScreenshotPreviews((prev) => [...prev, ...previewsArray]);
+    }
+  };
+
+  // 💡 [추가] 첨부한 스크린샷 개별 삭제 핸들러
+  const removeScreenshot = (index: number) => {
+    setScreenshots(prev => prev.filter((_, i) => i !== index));
+    setScreenshotPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
   const uploadToFirebaseDirectly = async (fileToUpload: File, folder: string) => {
     const bucket = "tristan-archive.firebasestorage.app";
     const fileName = `${Date.now()}_${fileToUpload.name}`;
@@ -45,7 +67,7 @@ export default function AppUploadPage() {
       headers: {
         "Content-Type": fileToUpload.type || "application/octet-stream",
       },
-      body: fileToUpload, // 브라우저에서 직접 쏩니다!
+      body: fileToUpload,
     });
 
     if (!res.ok) throw new Error("파이어베이스 직접 업로드 실패");
@@ -72,11 +94,21 @@ export default function AppUploadPage() {
         iconUrl = await uploadToFirebaseDirectly(icon, "icons");
       }
 
-      // 2️⃣ 40MB APK 다이렉트 업로드 (Vercel 용량 제한 무시!)
+      // 2️⃣ 스크린샷 여러 장 다이렉트 업로드 (추가된 부분)
+      let screenshotUrls: string[] = [];
+      if (screenshots.length > 0) {
+        for (let i = 0; i < screenshots.length; i++) {
+          setUploadProgress(`스크린샷 업로드 중... (${i + 1}/${screenshots.length})`);
+          const url = await uploadToFirebaseDirectly(screenshots[i], "screenshots");
+          screenshotUrls.push(url);
+        }
+      }
+
+      // 3️⃣ 40MB APK 다이렉트 업로드
       setUploadProgress("앱 파일(APK) 업로드 중... (40MB라 조금 걸립니다!)");
       const fileUrl = await uploadToFirebaseDirectly(file, "apps");
 
-      // 3️⃣ DB에 글쓰기 (Vercel API로는 무거운 파일 빼고 '글자'만 보냅니다)
+      // 4️⃣ DB에 글쓰기 (detailedDescription, screenshotUrls 추가)
       setUploadProgress("데이터베이스 저장 중...");
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -84,10 +116,12 @@ export default function AppUploadPage() {
         body: JSON.stringify({
           title,
           description,
+          detailedDescription, // 💡 추가
           version,
           requireLogin,
-          fileUrl, // 스토리지에서 받은 주소만 전송!
-          iconUrl
+          fileUrl,
+          iconUrl,
+          screenshotUrls // 💡 추가
         }),
       });
 
@@ -121,6 +155,7 @@ export default function AppUploadPage() {
 
         <form onSubmit={handleUpload} className="space-y-6">
           
+          {/* 아이콘 업로드 */}
           <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 rounded-[2rem] border-2 border-dashed border-blue-200">
             <label className="text-xs font-black text-blue-600 uppercase tracking-widest">App Icon</label>
             <div className="relative group cursor-pointer">
@@ -149,8 +184,49 @@ export default function AppUploadPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-gray-900 uppercase tracking-widest">Description</label>
+            <label className="text-xs font-black text-gray-900 uppercase tracking-widest">Short Description (한줄 설명)</label>
             <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="예: 철도인을 위한 맞춤형 급여 자동 계산기" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none" required />
+          </div>
+
+          {/* 💡 [추가] 앱 상세 설명 (긴 글) */}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-900 uppercase tracking-widest">Detailed Description (상세 설명)</label>
+            <textarea 
+              value={detailedDescription} 
+              onChange={(e) => setDetailedDescription(e.target.value)} 
+              placeholder="앱에 대한 자세한 기능 설명이나 업데이트 내역 등을 자유롭게 적어주세요." 
+              className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none h-32 resize-none" 
+            />
+          </div>
+
+          {/* 💡 [추가] 인앱 스크린샷 업로드 */}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-900 uppercase tracking-widest">Screenshots (인앱 화면 다중 선택)</label>
+            <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-gray-300 border-dashed rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">📱</span>
+                <p className="text-sm text-gray-500 font-bold">스크린샷 이미지 추가하기 (여러 장 가능)</p>
+              </div>
+              <input type="file" className="hidden" onChange={handleScreenshotsChange} accept="image/*" multiple />
+            </label>
+            
+            {/* 스크린샷 미리보기 목록 */}
+            {screenshotPreviews.length > 0 && (
+              <div className="flex gap-3 overflow-x-auto py-2">
+                {screenshotPreviews.map((src, index) => (
+                  <div key={index} className="relative flex-shrink-0 w-20 h-36 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={src} alt={`screenshot-${index}`} className="w-full h-full object-cover" />
+                    <button 
+                      type="button"
+                      onClick={() => removeScreenshot(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shadow-md hover:bg-red-600"
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -184,7 +260,6 @@ export default function AppUploadPage() {
             </div>
           )}
 
-          {/* 💡 진행 상황 표시 */}
           {uploadProgress && (
             <div className="p-4 rounded-xl text-sm font-bold text-center bg-blue-50 text-blue-600 animate-pulse">
               {uploadProgress}
