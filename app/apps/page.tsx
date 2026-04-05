@@ -72,20 +72,27 @@ export default async function AppsPage() {
           </div>
           <div className="space-y-4">
             {freeApps.length > 0 ? freeApps.map((app) => (
-                <div key={app.id} className="flex flex-col p-4 sm:p-5 bg-gray-50 rounded-3xl border border-gray-100 hover:shadow-xl hover:bg-white transition-all group/item">
+                <div key={app.id} className="flex flex-col p-4 sm:p-5 bg-gray-50 rounded-3xl border border-gray-100 hover:shadow-xl hover:bg-white transition-all group/item relative">
                   <div className="flex items-center gap-3 sm:gap-4 w-full">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-105 transition-transform">
-                      {app.iconUrl ? <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" /> : <span className="text-3xl">📱</span>}
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h3 className="font-black text-gray-900 text-base sm:text-lg leading-tight truncate">{app.title}</h3>
-                      <p className="text-[11px] sm:text-xs text-gray-500 font-bold mt-0.5 mb-1.5 truncate">{app.description}</p>
-                      <div><span className="text-[10px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-md font-black">v{app.version}</span></div>
-                    </div>
-                    <a href={app.fileUrl} className="shrink-0 bg-white border-2 border-gray-200 hover:border-blue-600 hover:text-blue-600 text-gray-700 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95">받기</a>
+                    
+                    {/* 💡 [해결] as any를 명시적으로 적용하여 타입 에러를 완전히 우회합니다 */}
+                    <Link href={`/apps/${app.id}` as any} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 group/link cursor-pointer">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-105 transition-transform">
+                        {app.iconUrl ? <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" /> : <span className="text-3xl">📱</span>}
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <h3 className="font-black text-gray-900 text-base sm:text-lg leading-tight truncate group-hover/link:text-blue-600 transition-colors">{app.title}</h3>
+                        <p className="text-[11px] sm:text-xs text-gray-500 font-bold mt-0.5 mb-1.5 truncate">{app.description}</p>
+                        <div><span className="text-[10px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-md font-black">v{app.version}</span></div>
+                      </div>
+                    </Link>
+
+                    {/* 받기 버튼 */}
+                    <a href={app.fileUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 bg-white border-2 border-gray-200 hover:border-blue-600 hover:text-blue-600 text-gray-700 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95 z-10">받기</a>
                   </div>
+                  
                   {isAdmin && (
-                    <div className="mt-3 pt-3 border-t border-gray-200/70 flex justify-end">
+                    <div className="mt-3 pt-3 border-t border-gray-200/70 flex justify-end relative z-10">
                       <AdminActions appId={app.id} currentTitle={app.title} />
                     </div>
                   )}
@@ -105,20 +112,27 @@ export default async function AppsPage() {
           <div className="space-y-4 relative z-10">
             {isStaff ? (
               staffApps.length > 0 ? staffApps.map((app) => (
-                  <div key={app.id} className="flex flex-col p-4 sm:p-5 bg-gray-900/50 rounded-3xl border border-gray-800 hover:border-blue-900 hover:bg-gray-900 transition-all group/item">
+                  <div key={app.id} className="flex flex-col p-4 sm:p-5 bg-gray-900/50 rounded-3xl border border-gray-800 hover:border-blue-900 hover:bg-gray-900 transition-all group/item relative">
                     <div className="flex items-center gap-3 sm:gap-4 w-full">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 bg-gray-800 text-gray-300 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-105 transition-transform">
-                        {app.iconUrl ? <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" /> : <span className="text-3xl">🛡️</span>}
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h3 className="font-black text-white text-base sm:text-lg leading-tight truncate">{app.title}</h3>
-                        <p className="text-[11px] sm:text-xs text-gray-400 font-bold mt-0.5 mb-1.5 truncate">{app.description}</p>
-                        <div><span className="text-[10px] bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded-md font-black">v{app.version}</span></div>
-                      </div>
-                      <a href={app.fileUrl} className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95 shadow-lg shadow-blue-900/40">받기</a>
+                      
+                      {/* 💡 [해결] 여기도 동일하게 as any 적용! */}
+                      <Link href={`/apps/${app.id}` as any} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 group/link cursor-pointer">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 bg-gray-800 text-gray-300 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner group-hover/item:scale-105 transition-transform">
+                          {app.iconUrl ? <img src={app.iconUrl} alt={app.title} className="w-full h-full object-cover" /> : <span className="text-3xl">🛡️</span>}
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <h3 className="font-black text-white text-base sm:text-lg leading-tight truncate group-hover/link:text-blue-400 transition-colors">{app.title}</h3>
+                          <p className="text-[11px] sm:text-xs text-gray-400 font-bold mt-0.5 mb-1.5 truncate">{app.description}</p>
+                          <div><span className="text-[10px] bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded-md font-black">v{app.version}</span></div>
+                        </div>
+                      </Link>
+
+                      {/* 받기 버튼 */}
+                      <a href={app.fileUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all active:scale-95 shadow-lg shadow-blue-900/40 z-10">받기</a>
                     </div>
+                    
                     {isAdmin && (
-                      <div className="mt-3 pt-3 border-t border-gray-800 flex justify-end">
+                      <div className="mt-3 pt-3 border-t border-gray-800 flex justify-end relative z-10">
                         <AdminActions appId={app.id} currentTitle={app.title} />
                       </div>
                     )}

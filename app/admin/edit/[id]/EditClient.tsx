@@ -76,7 +76,7 @@ export default function EditClient({ appId, initialData }: { appId: string, init
         />
       </div>
 
-      <label className="flex items-center gap-3 text-white">
+      <label className="flex items-center gap-3 text-gray-700 font-bold">
         <input 
           type="checkbox" 
           className="w-5 h-5"
