@@ -10,10 +10,12 @@ export async function POST(req: Request) {
     const newApp = {
       title: data.title,
       description: data.description,
+      detailedDescription: data.detailedDescription || "", // 💡 [추가] 상세 설명 받기!
       version: data.version,
       requireLogin: data.requireLogin,
-      fileUrl: data.fileUrl, // 프론트엔드에서 파이어베이스에 직접 올리고 받아온 주소!
+      fileUrl: data.fileUrl, 
       iconUrl: data.iconUrl || "",
+      screenshotUrls: data.screenshotUrls || [], // 💡 [추가] 스크린샷 배열 받기!
       createdAt: new Date().toISOString(),
     };
 
