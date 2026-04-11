@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore"; // 💡 숫자 증감을 위해 추가
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 
 // 🗑️ DELETE: 게시글 삭제
 export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
@@ -29,7 +28,7 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
       authorId: userId || "unknown_user",         
       authorNickname: nickname || "익명 승객",      
       parentId: parentId || null,                 
-      createdAt: new Date().toISOString(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     // 💡 2. 게시글의 댓글 숫자(commentCount) 1 증가!

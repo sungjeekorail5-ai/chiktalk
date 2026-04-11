@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       fileUrl: data.fileUrl, 
       iconUrl: data.iconUrl || "",
       screenshotUrls: data.screenshotUrls || [], // 💡 [추가] 스크린샷 배열 받기!
-      createdAt: new Date().toISOString(),
+      createdAt: FieldValue.serverTimestamp(),
     };
 
     // Firestore DB 'apps' 컬렉션에 저장

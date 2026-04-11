@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import { sendEmail } from "@/lib/mailer";
 
 export async function POST(req: Request) {
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     await adminDb.collection("passwordResets").doc(email).set({
       token: resetToken,
       userId,
-      createdAt: new Date(),
+      createdAt: FieldValue.serverTimestamp(),
       expiresAt: Date.now() + 10 * 60 * 1000, // 10분
       used: false,
     });

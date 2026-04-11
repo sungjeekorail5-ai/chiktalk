@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
   try {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     // 2. 인증 성공 처리 (해당 문서 업데이트)
     await doc.ref.update({
       verified: true,
-      verifiedAt: new Date().toISOString(),
+      verifiedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({

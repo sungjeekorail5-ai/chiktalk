@@ -181,7 +181,7 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
                 </span>
                 <div className="flex items-center gap-2 shrink-0">
                   <span suppressHydrationWarning className="text-[10px] text-gray-400 whitespace-nowrap">
-                    {new Date(cmt.createdAt).toLocaleString()}
+                    {new Date(cmt.createdAt).toLocaleString("ko-KR")}
                   </span>
                   {isOwnerOrAdmin(cmt.authorId) && (
                     <div className="flex gap-2 text-[10px] font-bold pl-2 border-l border-gray-100">
@@ -221,7 +221,7 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
                         <span suppressHydrationWarning className="text-[9px] text-gray-400 whitespace-nowrap">
-                          {new Date(reply.createdAt).toLocaleString()}
+                          {new Date(reply.createdAt).toLocaleString("ko-KR")}
                         </span>
                         {isOwnerOrAdmin(reply.authorId) && (
                           <div className="flex gap-2 text-[9px] font-bold pl-2 border-l border-gray-100">

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb, adminStorage } from "@/lib/firebase-admin"; 
+import { adminDb, adminStorage, FieldValue } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       content,
       authorId: userDoc.id, 
       authorNickname: userData?.nickname || "익명",
-      createdAt: new Date().toISOString(),
+      createdAt: FieldValue.serverTimestamp(),
       views: 0,
       commentCount: 0,
       likeCount: 0,

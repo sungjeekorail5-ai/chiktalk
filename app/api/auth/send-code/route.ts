@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin"; // Admin SDK 사용
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import { sendVerificationEmail } from "@/lib/mailer";
 
 export async function POST(request: Request) {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     await adminDb.collection("emailVerifications").add({
       email,
       code: verificationCode,
-      createdAt: new Date(), // Admin SDK에서는 Date 객체나 FieldValue 사용
+      createdAt: FieldValue.serverTimestamp(),
       expiresAt: Date.now() + 10 * 60 * 1000, 
       verified: false,
     });

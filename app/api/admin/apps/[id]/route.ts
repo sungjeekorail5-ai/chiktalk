@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 
 // 🗑️ [DELETE] 앱 삭제 API
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // 프론트에서 보낸 데이터(...body)를 그대로 파이어베이스에 업데이트
     await adminDb.collection("apps").doc(id).update({
       ...body,
-      updatedAt: new Date().toISOString(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({ success: true, message: "수정 완료" });

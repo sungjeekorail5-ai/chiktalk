@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import { hashPassword } from "@/lib/password";
 
 export async function POST(req: Request) {
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       korailEmail: email,
       passwordHash,
       korailVerified: true,
-      createdAt: new Date().toISOString(),
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     // 인증 문서 삭제

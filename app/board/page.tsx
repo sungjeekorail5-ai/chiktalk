@@ -23,8 +23,11 @@ function timeAgo(dateInput: any) {
   let date: Date;
   if (typeof dateInput === "string") {
     date = new Date(dateInput);
-  } else if (dateInput.seconds) {
-    date = new Date(dateInput.seconds * 1000);
+  } else if (dateInput.toDate) {
+    date = dateInput.toDate();
+  } else if (dateInput.seconds || dateInput._seconds) {
+    const s = dateInput.seconds || dateInput._seconds;
+    date = new Date(s * 1000);
   } else {
     return "방금 전";
   }
@@ -34,7 +37,7 @@ function timeAgo(dateInput: any) {
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
   if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}일 전`;
-  return date.toLocaleDateString();
+  return date.toLocaleDateString("ko-KR");
 }
 
 export default function BoardPage() {

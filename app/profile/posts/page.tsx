@@ -56,8 +56,12 @@ export default function MyPostsPage() {
   // 💡 3. 날짜 에러 방어 로직 (텍스트 날짜와 파이어베이스 날짜 모두 호환되게 처리)
   const formatDate = (dateData: any) => {
     if (!dateData) return '날짜 정보 없음';
-    if (typeof dateData === 'string') return new Date(dateData).toLocaleDateString();
-    if (dateData.toDate) return dateData.toDate().toLocaleDateString();
+    if (typeof dateData === 'string') return new Date(dateData).toLocaleDateString("ko-KR");
+    if (dateData.toDate) return dateData.toDate().toLocaleDateString("ko-KR");
+    if (dateData.seconds || dateData._seconds) {
+      const s = dateData.seconds || dateData._seconds;
+      return new Date(s * 1000).toLocaleDateString("ko-KR");
+    }
     return '날짜 정보 없음';
   };
 

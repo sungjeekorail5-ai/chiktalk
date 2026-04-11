@@ -4,6 +4,15 @@ import { notFound } from "next/navigation";
 import { PostActionButtons, CommentSection, LikeButton } from "./ClientArea"; 
 import { FieldValue } from "firebase-admin/firestore"; 
 
+// 💡 Firestore Timestamp → 표시용 문자열 변환
+function formatTimestamp(ts: any): string {
+  if (!ts) return "";
+  if (ts.toDate) return ts.toDate().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+  if (ts._seconds) return new Date(ts._seconds * 1000).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+  if (typeof ts === "string") return new Date(ts).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+  return "";
+}
+
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -28,7 +37,15 @@ export default async function PostDetailPage({ params }: Props) {
     .orderBy("createdAt", "asc")
     .get();
     
-  const comments = commentsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const comments = commentsSnapshot.docs.map(d => {
+    const data = d.data();
+    return {
+      id: d.id,
+      ...data,
+      // 💡 Firestore Timestamp → ISO 문자열로 변환 (클라이언트 컴포넌트에 전달용)
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+    };
+  });
 
   const displayNickname = post?.authorNickname || post?.author || "익명 승객";
 
@@ -64,7 +81,7 @@ export default async function PostDetailPage({ params }: Props) {
             </div>
             
             <span suppressHydrationWarning className="text-gray-400 font-medium shrink-0 ml-4">
-              {new Date(post?.createdAt).toLocaleString()}
+              {formatTimestamp(post?.createdAt)}
             </span>
           </div>
 

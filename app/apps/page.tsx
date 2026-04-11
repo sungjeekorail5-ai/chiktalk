@@ -13,7 +13,7 @@ interface AppData {
   fileUrl: string;
   iconUrl?: string;
   requireLogin: boolean;
-  createdAt: string;
+  createdAt: any;
 }
 
 export default async function AppsPage() {

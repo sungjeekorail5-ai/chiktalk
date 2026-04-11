@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore"; // 💡 숫자 증감을 위해 추가
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 
 // ✏️ PUT: 댓글 수정
 export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
@@ -19,7 +18,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
       .doc(commentId)
       .update({
         content,
-        updatedAt: new Date().toISOString(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
 
     return NextResponse.json({ message: "댓글 수정 완료" }, { status: 200 });

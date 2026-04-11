@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
 const projectId = "tristan-archive";
@@ -28,3 +28,4 @@ const adminApp =
 
 export const adminDb = getFirestore(adminApp);
 export const adminStorage = getStorage(adminApp);
+export { FieldValue };
