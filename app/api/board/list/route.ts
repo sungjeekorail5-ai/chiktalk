@@ -13,10 +13,17 @@ export async function GET() {
       .orderBy("createdAt", "desc")
       .get();
 
-    const posts = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const posts = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // 💡 Firestore Timestamp → ISO 문자열 변환 (클라이언트 호환)
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate().toISOString()
+          : data.createdAt,
+      };
+    });
 
     // 2️⃣ 💡 [핵심] 현재 로그인한 유저 정보 전달
     const userId = session || ""; 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import { sendEmail } from "@/lib/mailer";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
@@ -17,8 +18,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "사용자를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    // 2. 임시 토큰 생성 + 만료시간 저장
-    const resetToken = Buffer.from(email + ":" + Date.now()).toString('base64');
+    // 2. 임시 토큰 생성 + 만료시간 저장 (암호학적으로 안전한 랜덤 토큰)
+    const resetToken = crypto.randomBytes(32).toString('hex');
     const userId = userSnap.docs[0].id;
 
     await adminDb.collection("passwordResets").doc(email).set({

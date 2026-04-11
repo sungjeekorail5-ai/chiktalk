@@ -28,10 +28,10 @@ export default function MyPostsPage() {
         // 💡 1. 서랍 이름 맞추기: 'board' -> 'posts'
         const postsRef = collection(db, "posts"); 
         
-        // 💡 2. 이름표 맞추기: 'author' -> 'authorNickname'
+        // 💡 2. 유저 ID로 내 글만 검색 (닉네임은 중복 가능하므로 ID 사용)
         const q = query(
           postsRef,
-          where("authorNickname", "==", user.nickname), 
+          where("authorId", "==", user.id),
           orderBy("createdAt", "desc")
         );
 

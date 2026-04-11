@@ -1,25 +1,38 @@
 import { NextResponse } from "next/server";
 import { adminDb, FieldValue } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
+
+const ADMIN_ID = "sungjee90";
 
 export async function POST(req: Request) {
   try {
-    // 💡 이제 FormData(파일)가 아니라 가벼운 JSON(텍스트)만 받습니다.
+    // 💡 관리자 인증 체크
+    const cookieStore = await cookies();
+    const session = cookieStore.get("session")?.value;
+
+    if (!session || session === "guest_session") {
+      return NextResponse.json({ success: false, message: "로그인이 필요합니다." }, { status: 401 });
+    }
+
+    const userDoc = await adminDb.collection("users").doc(session).get();
+    if (!userDoc.exists || userDoc.id !== ADMIN_ID) {
+      return NextResponse.json({ success: false, message: "관리자만 앱을 업로드할 수 있습니다." }, { status: 403 });
+    }
+
     const data = await req.json();
-    
-    // DB에 저장할 앱 정보 조합
+
     const newApp = {
       title: data.title,
       description: data.description,
-      detailedDescription: data.detailedDescription || "", // 💡 [추가] 상세 설명 받기!
+      detailedDescription: data.detailedDescription || "",
       version: data.version,
       requireLogin: data.requireLogin,
-      fileUrl: data.fileUrl, 
+      fileUrl: data.fileUrl,
       iconUrl: data.iconUrl || "",
-      screenshotUrls: data.screenshotUrls || [], // 💡 [추가] 스크린샷 배열 받기!
+      screenshotUrls: data.screenshotUrls || [],
       createdAt: FieldValue.serverTimestamp(),
     };
 
-    // Firestore DB 'apps' 컬렉션에 저장
     await adminDb.collection("apps").add(newApp);
 
     return NextResponse.json({ success: true, message: "업로드 성공" });

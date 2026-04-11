@@ -5,11 +5,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 interface AuthUser {
   id: string;
   nickname: string;
+  korailVerified?: boolean;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
-  login: (id: string, nickname: string) => void;
+  login: (id: string, nickname: string, korailVerified?: boolean) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -29,10 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = (id: string, nickname: string) => {
-    const newUser = { id, nickname };
+  const login = (id: string, nickname: string, korailVerified?: boolean) => {
+    const newUser = { id, nickname, korailVerified: korailVerified ?? false };
     setUser(newUser);
-    localStorage.setItem("chik_user", JSON.stringify(newUser)); // 닉네임 저장!
+    localStorage.setItem("chik_user", JSON.stringify(newUser));
   };
 
   const logout = async () => {

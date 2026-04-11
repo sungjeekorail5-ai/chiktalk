@@ -32,8 +32,9 @@ export async function POST(req: Request) {
     const usersRef = adminDb.collection("users");
     const snapshot = await usersRef.where("username", "==", id).get();
 
+    // 💡 아이디 없음 / 비번 틀림 모두 같은 메시지 (계정 열거 방지)
     if (snapshot.empty) {
-      return NextResponse.json({ message: "존재하지 않는 아이디입니다." }, { status: 401 });
+      return NextResponse.json({ message: "아이디 또는 비밀번호가 일치하지 않습니다." }, { status: 401 });
     }
 
     const userDoc = snapshot.docs[0];
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
     const isPasswordMatch = await verifyPassword(password, userData.passwordHash);
 
     if (!isPasswordMatch) {
-      return NextResponse.json({ message: "비밀번호가 일치하지 않습니다." }, { status: 401 });
+      return NextResponse.json({ message: "아이디 또는 비밀번호가 일치하지 않습니다." }, { status: 401 });
     }
 
     // 세션 쿠키 설정
@@ -55,10 +56,11 @@ export async function POST(req: Request) {
       path: "/",
     });
 
-    // 💡 [핵심] 로그인 성공 시 DB에 저장된 nickname을 프론트엔드로 전달합니다!
-    return NextResponse.json({ 
+    // 💡 [핵심] 로그인 성공 시 DB에 저장된 nickname + korailVerified를 프론트엔드로 전달합니다!
+    return NextResponse.json({
       message: "로그인 성공 🚂",
-      nickname: userData.nickname || id // 만약 닉네임이 없으면 아이디라도 보냅니다.
+      nickname: userData.nickname || id,
+      korailVerified: userData.korailVerified ?? false,
     }, { status: 200 });
 
   } catch (error) {

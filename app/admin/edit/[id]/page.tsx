@@ -20,14 +20,17 @@ export default async function AppEditPage({ params }: Props) {
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 space-y-6">
       <h1 className="text-3xl font-black text-gray-900 tracking-tight">앱 수정하기</h1>
-      <EditClient 
+      <EditClient
         appId={id}
         initialData={{
           title: appData?.title || "",
           description: appData?.description || "",
-          detailedDescription: appData?.detailedDescription || "", // 💡 이 줄이 추가되었습니다!
+          detailedDescription: appData?.detailedDescription || "",
           version: appData?.version || "1.0.0",
           requireLogin: appData?.requireLogin || false,
+          iconUrl: appData?.iconUrl || "",
+          screenshotUrls: appData?.screenshotUrls || [],
+          fileUrl: appData?.fileUrl || "",
         }}
       />
     </div>

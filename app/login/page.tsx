@@ -31,7 +31,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        login(idValue, data.nickname); 
+        login(idValue, data.nickname, data.korailVerified);
         
         // 💡 페이지 이동 전 강제 새로고침 효과를 주어 레이아웃이 정보를 새로 읽게 합니다.
         router.push("/");

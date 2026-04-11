@@ -51,8 +51,6 @@ export function LikeButton({ postId, initialLikes, likedUsers = [] }: { postId: 
     try {
       const res = await fetch(`/api/board/${postId}/like`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
       });
 
       if (res.ok) {
@@ -111,19 +109,19 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
     const res = await fetch(`/api/board/${postId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        userId: user.id, 
-        nickname: user.nickname, 
-        content, 
-        parentId: replyTo?.id || null 
+      body: JSON.stringify({
+        content,
+        parentId: replyTo?.id || null
       }),
     });
 
     if (res.ok) {
       setContent("");
       setReplyTo(null);
-      setIsExpanded(false); 
-      router.refresh(); 
+      setIsExpanded(false);
+      router.refresh();
+    } else {
+      alert("댓글 등록에 실패했습니다.");
     }
     setIsLoading(false);
   };
@@ -131,7 +129,11 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("이 댓글을 삭제할까요?")) return;
     const res = await fetch(`/api/board/${postId}/comment?commentId=${commentId}`, { method: "DELETE" });
-    if (res.ok) router.refresh();
+    if (res.ok) {
+      router.refresh();
+    } else {
+      alert("댓글 삭제에 실패했습니다.");
+    }
   };
 
   const handleUpdateComment = async (commentId: string) => {
@@ -145,6 +147,8 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
       setEditingId(null);
       setEditContent("");
       router.refresh();
+    } else {
+      alert("댓글 수정에 실패했습니다.");
     }
   };
 

@@ -28,7 +28,7 @@ export default async function AppsPage() {
     isStaff = true;
     try {
       const userDoc = await adminDb.collection("users").doc(session).get();
-      if (userDoc.exists && userDoc.data()?.username === "sungjee90") {
+      if (userDoc.exists && userDoc.id === "sungjee90") {
         isAdmin = true;
       }
     } catch (error) {

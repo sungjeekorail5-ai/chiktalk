@@ -1,12 +1,27 @@
 import { NextResponse } from "next/server";
 import { adminDb, FieldValue } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
 
-// 🗑️ [DELETE] 앱 삭제 API
+const ADMIN_ID = "sungjee90";
+
+// 💡 관리자 검증 헬퍼
+async function verifyAdmin() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("session")?.value;
+  if (!session || session === "guest_session") return false;
+
+  const userDoc = await adminDb.collection("users").doc(session).get();
+  return userDoc.exists && userDoc.id === ADMIN_ID;
+}
+
+// 🗑️ [DELETE] 앱 삭제 API (관리자만)
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // 💡 [핵심] 최신 Next.js 문법에 맞게 await로 params를 기다려줍니다!
-    const { id } = await params; 
-    
+    if (!(await verifyAdmin())) {
+      return NextResponse.json({ success: false, message: "관리자만 삭제할 수 있습니다." }, { status: 403 });
+    }
+
+    const { id } = await params;
     await adminDb.collection("apps").doc(id).delete();
     return NextResponse.json({ success: true, message: "삭제 완료" });
   } catch (error) {
@@ -14,14 +29,16 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   }
 }
 
-// 📝 [PATCH] 앱 정보 수정 API
+// 📝 [PATCH] 앱 정보 수정 API (관리자만)
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // 💡 [핵심] 여기도 마찬가지로 await 추가!
+    if (!(await verifyAdmin())) {
+      return NextResponse.json({ success: false, message: "관리자만 수정할 수 있습니다." }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await req.json();
-    
-    // 프론트에서 보낸 데이터(...body)를 그대로 파이어베이스에 업데이트
+
     await adminDb.collection("apps").doc(id).update({
       ...body,
       updatedAt: FieldValue.serverTimestamp(),

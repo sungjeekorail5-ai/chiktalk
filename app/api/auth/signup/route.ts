@@ -27,10 +27,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // 💡 [추가] 닉네임 길이 제한 (2자~10자 사이가 적당합니다)
-    if (nickname.length < 2 || nickname.length > 10) {
+    // 💡 닉네임: 한글/영문/숫자만 허용, 2~10자 (앱과 동일한 규칙)
+    const nicknameRegex = /^[가-힣a-zA-Z0-9]{2,10}$/;
+    if (!nicknameRegex.test(nickname)) {
       return NextResponse.json(
-        { message: "닉네임은 2자 이상 10자 이하로 입력해주세요." },
+        { message: "닉네임은 한글/영문/숫자 2~10자로 입력해주세요." },
         { status: 400 }
       );
     }
@@ -42,9 +43,11 @@ export async function POST(req: Request) {
       );
     }
 
-    if (password.length < 6) {
+    // 💡 비밀번호: 영문+숫자+특수문자 포함 8~20자 (앱과 동일한 규칙)
+    const pwRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,20}$/;
+    if (!pwRegex.test(password)) {
       return NextResponse.json(
-        { message: "비밀번호는 6자 이상이어야 합니다." },
+        { message: "비밀번호는 영문+숫자+특수문자 포함 8~20자여야 합니다." },
         { status: 400 }
       );
     }
@@ -66,6 +69,18 @@ export async function POST(req: Request) {
     }
 
     const verificationDoc = verificationSnap.docs[0];
+    const verificationData = verificationDoc.data();
+
+    // 💡 인증 만료 확인 (인증 후 24시간 이내만 유효)
+    const verifiedAt = verificationData.verifiedAt;
+    const verifiedTime = verifiedAt?.toDate ? verifiedAt.toDate().getTime() : (verifiedAt?._seconds ? verifiedAt._seconds * 1000 : 0);
+    if (verifiedTime && Date.now() - verifiedTime > 24 * 60 * 60 * 1000) {
+      await verificationDoc.ref.delete();
+      return NextResponse.json(
+        { message: "이메일 인증이 만료되었습니다. 다시 인증해주세요." },
+        { status: 400 }
+      );
+    }
 
     // 💡 [추가] 닉네임 중복 체크 (DB에서 같은 닉네임이 있는지 확인)
     const nicknameCheck = await adminDb.collection("users").where("nickname", "==", nickname).get();

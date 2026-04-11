@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
   try {
-    const { id: postId } = await props.params;
-    const { userId } = await req.json();
+    // 💡 서버 세션에서 유저 확인 (클라이언트가 보낸 userId 무시)
+    const cookieStore = await cookies();
+    const session = cookieStore.get("session")?.value;
+    if (!session || session === "guest_session") {
+      return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
+    }
 
-    if (!userId) return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
+    const userDoc = await adminDb.collection("users").doc(session).get();
+    if (!userDoc.exists) {
+      return NextResponse.json({ message: "세션이 만료되었습니다." }, { status: 401 });
+    }
+
+    const userId = userDoc.id;
+    const { id: postId } = await props.params;
 
     const postRef = adminDb.collection("posts").doc(postId);
     const doc = await postRef.get();
@@ -15,19 +25,16 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
     if (!doc.exists) return NextResponse.json({ message: "글을 찾을 수 없습니다." }, { status: 404 });
 
     const postData = doc.data();
-    // 💡 좋아요를 누른 유저 ID 목록을 배열로 관리합니다.
     const likedUsers = postData?.likedUsers || [];
     const isAlreadyLiked = likedUsers.includes(userId);
 
     if (isAlreadyLiked) {
-      // 1. 이미 눌렀다면? 취소 (배열에서 제거 + 숫자 -1)
       await postRef.update({
         likedUsers: FieldValue.arrayRemove(userId),
         likeCount: FieldValue.increment(-1)
       });
       return NextResponse.json({ message: "좋아요 취소", liked: false });
     } else {
-      // 2. 처음 누른다면? 추가 (배열에 추가 + 숫자 +1)
       await postRef.update({
         likedUsers: FieldValue.arrayUnion(userId),
         likeCount: FieldValue.increment(1)

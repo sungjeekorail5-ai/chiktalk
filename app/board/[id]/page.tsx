@@ -1,8 +1,7 @@
-import { adminDb } from "@/lib/firebase-admin";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PostActionButtons, CommentSection, LikeButton } from "./ClientArea"; 
-import { FieldValue } from "firebase-admin/firestore"; 
+import { PostActionButtons, CommentSection, LikeButton } from "./ClientArea";
 
 // 💡 Firestore Timestamp → 표시용 문자열 변환
 function formatTimestamp(ts: any): string {
@@ -21,13 +20,13 @@ export default async function PostDetailPage({ params }: Props) {
   const { id } = await params;
   const postRef = adminDb.collection("posts").doc(id);
 
-  // 1. 조회수 증가
-  await postRef.update({ views: FieldValue.increment(1) });
-
-  // 2. 데이터 가져오기
+  // 1. 데이터 가져오기
   const doc = await postRef.get();
   if (!doc.exists) return notFound();
   const post = doc.data();
+
+  // 2. 조회수 증가 (글이 존재할 때만)
+  await postRef.update({ views: FieldValue.increment(1) });
 
   // 댓글 데이터 가져오기 (오래된 순)
   const commentsSnapshot = await adminDb

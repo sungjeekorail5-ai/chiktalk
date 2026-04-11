@@ -25,8 +25,8 @@ export default function ProfilePage() {
     }
   };
 
-  // 🛡️ 스태프 여부 판별 (이메일에 @korail.com이 포함되어 있는지 확인)
-  const isStaff = (user as any)?.email?.endsWith('@korail.com');
+  // 🛡️ 스태프 여부 판별 (회원가입 시 @korail.com 인증 완료된 유저)
+  const isStaff = user?.korailVerified === true;
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
