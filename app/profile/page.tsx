@@ -25,8 +25,9 @@ export default function ProfilePage() {
     }
   };
 
-  // 🛡️ 스태프 여부 판별 (회원가입 시 @korail.com 인증 완료된 유저)
-  const isStaff = user?.korailVerified === true;
+  // 🛡️ 스태프 여부 판별 (회원가입 = @korail.com 인증 필수이므로 로그인한 유저는 전원 STAFF)
+  const isStaff = !!user;
+  const isAdmin = user?.id === "sungjee90";
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
@@ -67,7 +68,7 @@ export default function ProfilePage() {
             </span>
             
             {/* 👑 관리자 권한은 별도로 표시 */}
-            {(user as any)?.role === 'admin' && (
+            {isAdmin && (
               <span className="text-[10px] font-black px-2.5 py-1 rounded-md bg-purple-100 text-purple-600 border border-purple-200">
                 ADMIN
               </span>
