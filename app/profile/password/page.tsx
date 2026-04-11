@@ -1,15 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/lib/AuthContext";
-import { auth } from "@/lib/firebase";
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
 export default function PasswordPage() {
-  const { user } = useAuth();
   const router = useRouter();
-  
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,37 +13,40 @@ export default function PasswordPage() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) return;
 
     if (newPassword !== confirmPassword) {
       alert("새 비밀번호가 일치하지 않습니다! ❌");
       return;
     }
 
-    if (newPassword.length < 6) {
-      alert("비밀번호는 최소 6자리 이상이어야 합니다! 🔒");
+    // 앱과 동일한 비밀번호 규칙: 영문+숫자+특수문자 8~20자
+    const pwRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{8,20}$/;
+    if (!pwRegex.test(newPassword)) {
+      alert("비밀번호는 영문+숫자+특수문자 포함 8~20자여야 합니다! 🔒");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 🔐 보안을 위해 재인증 과정이 필요합니다. (로그인한 지 오래됐을 경우 대비)
-      const credential = EmailAuthProvider.credential(auth.currentUser.email!, currentPassword);
-      await reauthenticateWithCredential(auth.currentUser, credential);
-      
-      // 🚀 비밀번호 업데이트 발사!
-      await updatePassword(auth.currentUser, newPassword);
-      
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "비밀번호 변경에 실패했습니다.");
+        return;
+      }
+
       alert("비밀번호가 성공적으로 변경되었습니다! 🎉 다시 로그인해 주세요.");
       router.push("/login");
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      if (error.code === "auth/wrong-password") {
-        alert("현재 비밀번호가 틀렸습니다! 🚫");
-      } else {
-        alert("비밀번호 변경 중 에러가 발생했습니다. 다시 시도해 주세요.");
-      }
+      alert("비밀번호 변경 중 에러가 발생했습니다. 다시 시도해 주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +80,7 @@ export default function PasswordPage() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all mb-4"
-            placeholder="새 비밀번호 (6자 이상)"
+            placeholder="영문+숫자+특수문자 8~20자"
             required
           />
           <input

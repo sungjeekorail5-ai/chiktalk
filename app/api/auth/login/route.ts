@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import bcrypt from "bcrypt";
+import { verifyPassword } from "@/lib/password";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     const userData = userDoc.data();
 
     // 비밀번호 체크
-    const isPasswordMatch = await bcrypt.compare(password, userData.passwordHash);
+    const isPasswordMatch = await verifyPassword(password, userData.passwordHash);
 
     if (!isPasswordMatch) {
       return NextResponse.json({ message: "비밀번호가 일치하지 않습니다." }, { status: 401 });

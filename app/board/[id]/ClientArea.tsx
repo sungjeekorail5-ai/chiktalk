@@ -251,7 +251,7 @@ export function CommentSection({ postId, comments }: { postId: string, comments:
       </div>
 
       {/* 🚀 블라인드 스타일 하단 고정 댓글 입력바 (새로운 UX) */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 transition-all duration-300 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] ${isExpanded ? 'h-auto p-4 pb-[env(safe-area-inset-bottom,20px)]' : 'h-20 flex items-center px-4 pb-[env(safe-area-inset-bottom)]'}`}>
+      <div className={`fixed left-0 right-0 z-[60] bg-white border-t border-gray-200 transition-all duration-300 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] ${isExpanded ? 'bottom-0 md:bottom-0 h-auto p-4 pb-[env(safe-area-inset-bottom,20px)]' : 'bottom-16 md:bottom-0 h-20 flex items-center px-4 pb-[env(safe-area-inset-bottom)]'}`}>
         {!isExpanded ? (
           <div 
             onClick={() => { if(!user) return alert("로그인이 필요합니다! 🚂"); setIsExpanded(true); }}
