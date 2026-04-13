@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("인증번호 발송 에러:", error);
     return NextResponse.json(
-      { error: "메일 발송 중 오류가 발생했습니다." },
+      { error: "메일 발송 중 오류가 발생했습니다.", detail: error?.message || String(error) },
       { status: 500 }
     );
   }
