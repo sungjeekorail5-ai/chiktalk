@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { adminDb, FieldValue } from "@/lib/firebase-admin";
-import { sendVerificationEmail } from "@/lib/mailer";
+
+// 💡 Cloud Function을 통해 이메일 발송 (Vercel에서 직접 SMTP 사용 시 Gmail 차단 이슈 해결)
+const CLOUD_FUNCTION_URL =
+  "https://asia-northeast3-tristan-archive.cloudfunctions.net/sendVerificationCode";
 
 export async function POST(request: Request) {
   try {
@@ -13,18 +15,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Admin SDK의 Firestore 방식 (collection, addDoc 대신 더 직관적인 collection().add())
-    await adminDb.collection("emailVerifications").add({
-      email,
-      code: verificationCode,
-      createdAt: FieldValue.serverTimestamp(),
-      expiresAt: Date.now() + 10 * 60 * 1000, 
-      verified: false,
+    // Cloud Function 호출 (Firestore 저장 + 이메일 발송을 Cloud Function이 처리)
+    const cfResponse = await fetch(CLOUD_FUNCTION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { email } }),
     });
 
-    await sendVerificationEmail(email, verificationCode);
+    const cfResult = await cfResponse.json();
+
+    if (cfResult.error) {
+      console.error("Cloud Function 에러:", cfResult.error);
+      return NextResponse.json(
+        { error: "메일 발송 중 오류가 발생했습니다." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true, message: "인증번호가 발송되었습니다." });
   } catch (error: any) {
