@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { adminDb, FieldValue } from "@/lib/firebase-admin";
-import { sendEmail } from "@/lib/mailer";
-import crypto from "crypto";
+
+// 💡 Cloud Function을 통해 이메일 발송 (Vercel에서 직접 SMTP 사용 시 Gmail 차단 이슈 해결)
+const CLOUD_FUNCTION_URL =
+  "https://asia-northeast3-tristan-archive.cloudfunctions.net/sendPasswordResetCode";
 
 export async function POST(req: Request) {
   try {
@@ -11,41 +12,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "이메일을 입력해주세요." }, { status: 400 });
     }
 
-    // 1. 해당 이메일의 유저가 있는지 확인
-    const userSnap = await adminDb.collection("users").where("korailEmail", "==", email).get();
+    // Cloud Function 호출 (유저 존재 확인 + 코드 생성 + Firestore 저장 + 메일 발송을 Cloud Function이 처리)
+    const cfResponse = await fetch(CLOUD_FUNCTION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { email } }),
+    });
 
-    if (userSnap.empty) {
-      return NextResponse.json({ message: "사용자를 찾을 수 없습니다." }, { status: 404 });
+    const cfResult = await cfResponse.json();
+
+    if (cfResult.error) {
+      console.error("Cloud Function 에러:", cfResult.error);
+      return NextResponse.json(
+        { message: "인증번호 발송 중 오류가 발생했습니다." },
+        { status: 500 }
+      );
     }
 
-    // 2. 임시 토큰 생성 + 만료시간 저장 (암호학적으로 안전한 랜덤 토큰)
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const userId = userSnap.docs[0].id;
-
-    await adminDb.collection("passwordResets").doc(email).set({
-      token: resetToken,
-      userId,
-      createdAt: FieldValue.serverTimestamp(),
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10분
-      used: false,
-    });
-
-    // 요청 URL에서 도메인 자동 추출 (로컬/배포 모두 대응)
-    const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/[^/]*$/, "") || "https://chiktalk.vercel.app";
-    const resetLink = `${origin}/login/reset-password?token=${resetToken}`;
-
-    // 3. 메일 발송
-    await sendEmail({
-      to: email,
-      subject: "[칙칙톡톡] 비밀번호 재설정 안내입니다.",
-      html: `
-        <h1>비밀번호를 잊으셨나요?</h1>
-        <p>아래 링크를 클릭하여 새로운 비밀번호를 설정하세요.</p>
-        <a href="${resetLink}" style="padding: 10px 20px; background: #2563eb; color: white; border-radius: 8px; text-decoration: none;">비밀번호 재설정하기</a>
-      `,
-    });
-
-    return NextResponse.json({ message: "발송 성공" });
+    // 보안상 유저 존재 여부와 관계없이 동일 성공 응답 (이메일 열거 공격 방지)
+    return NextResponse.json({ message: "인증번호가 발송되었습니다." });
   } catch (error) {
     console.error("비밀번호 찾기 에러:", error);
     return NextResponse.json({ message: "서버 오류가 발생했습니다." }, { status: 500 });

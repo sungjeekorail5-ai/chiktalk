@@ -33,10 +33,10 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, message: "인증번호가 발송되었습니다." });
-  } catch (error: any) {
+  } catch (error) {
     console.error("인증번호 발송 에러:", error);
     return NextResponse.json(
-      { error: "메일 발송 중 오류가 발생했습니다.", detail: error?.message || String(error) },
+      { error: "메일 발송 중 오류가 발생했습니다." },
       { status: 500 }
     );
   }

@@ -1,13 +1,16 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Route } from "next";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleReset = async (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
@@ -23,7 +26,13 @@ export default function ForgotPasswordPage() {
 
       if (res.ok) {
         setIsError(false);
-        setMessage("이메일로 재설정 링크가 발송되었습니다! 💌");
+        setMessage("인증번호가 이메일로 발송되었습니다! 💌 잠시 후 재설정 페이지로 이동합니다...");
+        setTimeout(() => {
+          // typedRoutes 때문에 query string이 포함된 경로는 타입 캐스팅 필요
+          router.push(
+            `/login/reset-password?email=${encodeURIComponent(email)}` as Route
+          );
+        }, 1500);
       } else {
         setIsError(true);
         setMessage(data.message || "요청에 실패했습니다. 다시 시도해 주세요.");
@@ -39,7 +48,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl shadow-sm border border-gray-100">
       <h2 className="text-2xl font-bold mb-6">비밀번호 찾기 🚂</h2>
-      <form onSubmit={handleReset} className="space-y-4">
+      <form onSubmit={handleSend} className="space-y-4">
         <input
           type="email"
           placeholder="가입한 이메일을 입력하세요"
@@ -55,7 +64,7 @@ export default function ForgotPasswordPage() {
             isLoading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
-          {isLoading ? "발송 중..." : "재설정 링크 보내기"}
+          {isLoading ? "발송 중..." : "인증번호 보내기"}
         </button>
       </form>
       {message && (
