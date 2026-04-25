@@ -104,6 +104,29 @@ export default async function PostDetailPage({ params }: Props) {
         {/* 📄 본문 내용 */}
         <div className="p-6 md:p-10 text-gray-800 leading-relaxed text-base md:text-lg whitespace-pre-wrap min-h-[200px]">
           {post?.content}
+
+          {/* 🖼️ 첨부 이미지 (있을 때만) */}
+          {Array.isArray(post?.images) && post.images.length > 0 && (
+            <div className="mt-6 space-y-3">
+              {post.images.map((url: string, idx: number) => (
+                <a
+                  key={idx}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block overflow-hidden rounded-2xl border border-gray-100 bg-gray-50"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`첨부 이미지 ${idx + 1}`}
+                    className="w-full h-auto object-cover"
+                    loading="lazy"
+                  />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ❤️ 좋아요 & 💬 댓글수 표시 영역 */}
