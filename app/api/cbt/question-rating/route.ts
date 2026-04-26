@@ -12,7 +12,7 @@
 //     timestamp  : serverTimestamp
 
 import { NextResponse } from "next/server";
-import { adminDb, FieldValue } from "@/lib/firebase-admin";
+import { adminDb, cbtAdminDb, FieldValue } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 
 async function getUserId(): Promise<string | null> {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const uid = await getUserId();
     const nickname = uid ? await getNickname(uid) : "비회원";
 
-    await adminDb.collection("question_ratings").add({
+    await cbtAdminDb.collection("question_ratings").add({
       questionId,
       rating,
       uid: uid ?? "anonymous",

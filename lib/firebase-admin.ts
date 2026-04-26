@@ -1,9 +1,13 @@
 import "server-only";
 
-import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { cert, getApp, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
+// ─────────────────────────────────────────────────────
+// 1) 칙칙톡톡 본 프로젝트 (tristan-archive)
+//    게시판, 사용자, 앱 보관함, 칙칙톡톡 사용자별 오답노트 등
+// ─────────────────────────────────────────────────────
 const projectId = "tristan-archive";
 const clientEmail = "firebase-adminsdk-fbsvc@tristan-archive.iam.gserviceaccount.com";
 
@@ -13,19 +17,54 @@ if (!projectId || !clientEmail || !privateKey) {
   throw new Error("Firebase Admin 환경변수가 비어 있습니다.");
 }
 
+const TRISTAN_APP_NAME = "tristan-archive-app";
+
 const adminApp =
-  getApps().length > 0
-    ? getApps()[0]
-    : initializeApp({
-        credential: cert({
-          projectId,
-          clientEmail,
-          // 💡 replace(/\\n/g, '\n')를 통해 한 줄인 키를 서버가 좋아하는 규격으로 다시 풀어줍니다.
-          privateKey: privateKey.replace(/\\n/g, '\n'),
-        }),
-        storageBucket: "tristan-archive.firebasestorage.app", 
-      });
+  getApps().some((a) => a.name === TRISTAN_APP_NAME)
+    ? getApp(TRISTAN_APP_NAME)
+    : initializeApp(
+        {
+          credential: cert({
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, "\n"),
+          }),
+          storageBucket: "tristan-archive.firebasestorage.app",
+        },
+        TRISTAN_APP_NAME
+      );
 
 export const adminDb = getFirestore(adminApp);
 export const adminStorage = getStorage(adminApp);
+
+// ─────────────────────────────────────────────────────
+// 2) 코레일 CBT 프로젝트 (korail-cbt-2026)
+//    rankings, user_records, question_ratings 같은 CBT 공유 데이터
+//    → 코레일CBT 앱(안드로이드)과 완벽히 같은 Firestore 사용
+// ─────────────────────────────────────────────────────
+const cbtProjectId = "korail-cbt-2026";
+const cbtClientEmail =
+  "firebase-adminsdk-fbsvc@korail-cbt-2026.iam.gserviceaccount.com";
+
+const cbtPrivateKey =
+  "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDI0q183qUFdBDO\nxSsMBMulRXNsC4mGvnu3vvJk8CQAdN6UeDPPxe0ujWwkzgOjJV6FZZQLKGoDQ1AQ\n2054DA2d2v7myUb9UT+bcTyjx3zXBRJ7orSNqutOM9mJOF20xsp31aBfJZbdR5Q/\nRAtd+o84l5eChsYwM4f+akOr+Hwmfqtm+PKIYQwHrO8yWLbTzhhzorvg9ud1fE6R\neLZMZ0vr8Wn7ty8yzyuDztWECGkSGEoSOYpab9c7tFkFrYW2gooaslfBQeSSBpFH\nYSiIVHBQTrtWFwmosd3Es8s3D6BkA0rhX4S9rvqIayGz7Rrn5UWMLoskzYoTBCWx\nOukGPO5LAgMBAAECggEAJT6ha0+1hkHk3hxGJAf9psyvH+Ix4toQAt94gAzjeGw0\nXY+/eDDKkMAsxtSoawkCszXIE5uusaU5w66QqoX9voF/ldjNgCyh4dfJ+cwFFLG9\noE1oM//3fPzzwtW/10epBDmL8Sl9BdQBJAygGRFfn4zJzizls8nS1nXp0AqZJ+Ax\nF52PcpJUxvycmAv32wqJwWm6+RfYvzL/1N/DI/BuwHcJ6Zmqq7Q4pXbVOVfHJvjE\nRXfMAqu6LnM4IAReHpHoHKYI+p3meKiOkKo+jNlBnosMBCJOe/Gu1wpDHl84xsjE\nqO+ndUt+CDrFSRyCrZaWa/QRf4/fxGew2GRXMtyLSQKBgQDmUBATHbv63HT7SMMg\nEWsojaq7Bngg3dEz7bhSNqAMQcNXTZya3vUy+SL3xHzYlHU/OSSWnVZTnfcSv3gF\n7yulK/LsVEFvw652X95ZgyCpAfvdJue3GfUQjb96vJOcGR4VrNg1TNennr2XmwTn\nX8Ud8mh+x61OJ73co1++/5hiEwKBgQDfOJ3OTQEkupdMqj/F8DhPw4WbS6UaCi2a\nw3AEeBr/kyRzPJO+ifD8A1Y+nACzo2R7jqLej7SpPW9KUC6b4y7cn1cd/NEV63ZF\nnRznyZcDeWcg4mVdkVsxj4TBW7dLB5nOda1/jD54CmxUp5C5W84jcKZklHLHvq0j\nG+Es7aMJ6QKBgFHN8ke38gMCtxJiH9yOE0/OMexIOfcCksItF6EsAeEYorepu4xO\n0S0PzNnQkr+iy5pvQ42zyOveWdnw5ELHVutOFvTWYH/AM4GcP6/voXQmXj2JChjB\nQYhlsLN5s7xoN4VfZVRZPOguvAzTZQSBwdQHPBJ7/hSajReHeASxaIC9AoGAJyp8\n7dSvDa27nFUG6YkTqFMrHytvpZkBlXUTM4WLXyqHK70GQ1lasi03tbaTnPFfURqe\n0yQt08AWxdg5xVpgP4+prnZMjWcKEn7Vsom5eH+Vq7xtgrRdZt3CslaQW5bS0tns\n/kMyNsfFaDkaeJt2GNvMJjuxxABdypo6sTJk9/kCgYAVnnW0wg5WuuxZJUJf4rpb\n6l6kqlgT8L7IRHqCiNrHYSyDmyLEiMBW12ZzJu7/0VfVVds1I4YG0qGHbXGRTAWK\nyjpTfo5obkgfXyBn2boutv3SGyxOuVcfXN11rPSdmYrI6FzGE/gjrF/kETHZp2HX\n5y9QOcc7P4Aio+9fB2Ok8w==\n-----END PRIVATE KEY-----";
+
+const CBT_APP_NAME = "korail-cbt-app";
+
+const cbtAdminApp =
+  getApps().some((a) => a.name === CBT_APP_NAME)
+    ? getApp(CBT_APP_NAME)
+    : initializeApp(
+        {
+          credential: cert({
+            projectId: cbtProjectId,
+            clientEmail: cbtClientEmail,
+            privateKey: cbtPrivateKey.replace(/\\n/g, "\n"),
+          }),
+        },
+        CBT_APP_NAME
+      );
+
+export const cbtAdminDb = getFirestore(cbtAdminApp);
+
 export { FieldValue };
