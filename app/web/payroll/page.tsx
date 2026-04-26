@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createDefaultUserData, type UserData } from "@/lib/payroll/types";
 import InputWizard from "./InputWizard";
+import ResultView from "./ResultView";
 
 const STORAGE_KEY = "payroll:userData";
 
@@ -173,7 +174,10 @@ export default function PayrollPage() {
             onFinish={() => setTab(1)}
           />
         )}
-        {tab !== 0 && <Placeholder phase={tab} />}
+        {tab === 1 && <ResultView user={userData} mode="WAGE_COMPARE" />}
+        {tab === 3 && <ResultView user={userData} mode="PAY_CHECK" />}
+        {tab === 2 && <Placeholder phase={tab} />}
+        {tab === 4 && <Placeholder phase={tab} />}
       </div>
 
       {/* 공지 모달 (첫 진입 시 1회) */}
