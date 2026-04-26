@@ -6,21 +6,23 @@ import Link from "next/link";
 interface RankingItem {
   rank: number;
   userId: string;
+  uid?: string;
   nickname: string;
   score: number;
   category?: string;
   major?: string;
-  updatedAt?: string | null;
+  source?: "web" | "app";
+  timestamp?: string | null;
 }
 
 interface MyRecord {
   id: string;
-  userId: string;
+  uid?: string;
   nickname: string;
   score: number;
   category?: string;
   major?: string;
-  createdAt?: string | null;
+  timestamp?: string | null;
 }
 
 interface MyData {
@@ -29,7 +31,7 @@ interface MyData {
     score: number;
     category?: string;
     major?: string;
-    updatedAt?: string | null;
+    timestamp?: string | null;
   } | null;
   records: MyRecord[];
 }
@@ -86,8 +88,16 @@ export default function CbtRankingPage() {
           <h1 className="text-[24px] md:text-3xl font-extrabold text-gray-900 tracking-tight">
             랭킹
           </h1>
-          <p className="text-sm text-gray-500 font-semibold">
+          <p className="text-sm text-gray-500 font-semibold leading-relaxed">
             무한 퀴즈 통합문제 최고 연속 정답 TOP 100
+            <br />
+            <span className="text-amber-600 font-bold">
+              코레일CBT 앱 + 칙칙톡톡 웹 통합 랭킹.
+            </span>
+            <span className="inline-block ml-1 text-[9px] font-extrabold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none align-middle">
+              WEB
+            </span>
+            <span className="text-gray-500"> 뱃지가 칙칙톡톡 웹 등록 점수예요.</span>
           </p>
         </header>
 
@@ -206,9 +216,16 @@ function RankingRow({ item }: { item: RankingItem }) {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[15px] font-extrabold text-gray-900 truncate">
-          {item.nickname || "익명"}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-[15px] font-extrabold text-gray-900 truncate">
+            {item.nickname || "익명"}
+          </p>
+          {item.source === "web" && (
+            <span className="shrink-0 text-[9px] font-extrabold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none tracking-wider">
+              WEB
+            </span>
+          )}
+        </div>
         {(item.category || item.major) && (
           <p className="text-[11px] text-gray-500 font-semibold truncate">
             {item.category}
@@ -311,8 +328,8 @@ function MyRanking({ data }: { data: MyData | null }) {
 
 function RecordRow({ record }: { record: MyRecord }) {
   let dateStr = "";
-  if (record.createdAt) {
-    const d = new Date(record.createdAt);
+  if (record.timestamp) {
+    const d = new Date(record.timestamp);
     dateStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${d
       .getMinutes()
       .toString()

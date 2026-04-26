@@ -1,13 +1,15 @@
-// 🚂 코레일 CBT — 랭킹 API
+// 🚂 코레일 CBT — 통합 랭킹 API
 //
-// 칙칙톡톡 웹 전용 랭킹. 코레일CBT 앱(Firebase Auth UID 기반)과는
-// 인증 체계가 달라 분리된 컬렉션 사용.
+// 코레일CBT 앱(안드로이드)과 칙칙톡톡 웹(iOS/PC/모바일)이 같은 컬렉션을 공유한다.
+//   - 앱 사용자: doc id = Firebase Auth UID (예: "abc123XYZ...")
+//   - 웹 사용자: doc id = 칙칙톡톡 username (예: "sungjee90")
+// 인증 체계가 달라도 doc id 형식이 겹치지 않아 충돌 없이 한 보드에 같이 표시된다.
 //
-//   cbtRankings/{userId}        — 유저당 1건 (최고점 갱신만)
-//     userId, nickname, score, category, major, updatedAt
+//   rankings/{userId}        — 유저당 1건 (통합문제 카테고리, 최고점만 갱신)
+//     uid, nickname, score, category, major, timestamp
 //
-//   cbtRankRecords/(autoId)     — 모든 풀이 기록 (개인 기록 탭용)
-//     userId, nickname, score, category, major, createdAt
+//   user_records/(autoId)    — 모든 풀이 기록 (개인 기록 탭용)
+//     uid, nickname, score, category, major, timestamp
 
 import { NextResponse } from "next/server";
 import { adminDb, FieldValue } from "@/lib/firebase-admin";
@@ -28,9 +30,17 @@ async function getNickname(userId: string): Promise<string> {
   return userId;
 }
 
+function pickTimestampIso(raw: any): string | null {
+  if (!raw) return null;
+  if (typeof raw?.toDate === "function") return raw.toDate().toISOString();
+  if (typeof raw === "string") return raw;
+  if (raw?._seconds) return new Date(raw._seconds * 1000).toISOString();
+  return null;
+}
+
 // ─── GET ─────────────────────────────────────────────────
 // 기본: 전체 랭킹 top 100
-// ?my=true: 내 기록 (cbtRankRecords) + 내 최고점 (cbtRankings)
+// ?my=true: 내 기록 + 내 최고점
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const my = url.searchParams.get("my") === "true";
@@ -46,30 +56,25 @@ export async function GET(req: Request) {
         );
       }
       const [bestDoc, recordsSnap] = await Promise.all([
-        adminDb.collection("cbtRankings").doc(uid).get(),
-        adminDb
-          .collection("cbtRankRecords")
-          .where("userId", "==", uid)
-          .get(),
+        adminDb.collection("rankings").doc(uid).get(),
+        adminDb.collection("user_records").where("uid", "==", uid).get(),
       ]);
 
       const best = bestDoc.exists
         ? {
             ...bestDoc.data(),
-            updatedAt:
-              bestDoc.data()?.updatedAt?.toDate?.()?.toISOString() ?? null,
+            timestamp: pickTimestampIso(bestDoc.data()?.timestamp),
           }
         : null;
 
-      // 클라이언트에서 정렬 (복합 인덱스 회피)
+      // 클라이언트 사이드 정렬 (복합 인덱스 회피)
       const records = recordsSnap.docs
         .map((d) => {
           const data = d.data();
           return {
             id: d.id,
             ...data,
-            createdAt:
-              data.createdAt?.toDate?.()?.toISOString() ?? null,
+            timestamp: pickTimestampIso(data.timestamp),
           };
         })
         .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
@@ -81,9 +86,9 @@ export async function GET(req: Request) {
       );
     }
 
-    // 전체 랭킹
+    // 전체 랭킹 (앱 + 웹 사용자 통합)
     const snap = await adminDb
-      .collection("cbtRankings")
+      .collection("rankings")
       .orderBy("score", "desc")
       .limit(limit)
       .get();
@@ -93,11 +98,13 @@ export async function GET(req: Request) {
       return {
         rank: idx + 1,
         userId: d.id,
+        uid: data.uid ?? d.id,
         nickname: data.nickname ?? "",
         score: data.score ?? 0,
         category: data.category ?? "",
         major: data.major ?? "",
-        updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? null,
+        source: data.source ?? "app", // source 없으면 앱으로 간주 (코레일CBT 앱 호환)
+        timestamp: pickTimestampIso(data.timestamp),
       };
     });
 
@@ -113,8 +120,9 @@ export async function GET(req: Request) {
 
 // ─── POST: 점수 등록 ──────────────────────────────────────
 // body: { score, category, major? }
-// - 항상 cbtRankRecords에 1건 추가
-// - cbtRankings는 카테고리가 '통합문제'이고 기존 점수보다 높을 때만 갱신
+// - 항상 user_records에 1건 추가
+// - rankings는 카테고리가 '통합문제'이고 기존 점수보다 높을 때만 갱신
+// - 컬렉션과 필드 키는 코레일CBT 앱과 동일하게 사용 (uid, timestamp)
 export async function POST(req: Request) {
   const uid = await getUserId();
   if (!uid) {
@@ -136,32 +144,35 @@ export async function POST(req: Request) {
 
     const nickname = await getNickname(uid);
 
-    // 1. 모든 기록 저장
-    await adminDb.collection("cbtRankRecords").add({
-      userId: uid,
+    // 1. 모든 기록 저장 (앱과 동일 컬렉션 user_records)
+    //    source: 'web' 으로 표시하여 앱 등록과 구분
+    await adminDb.collection("user_records").add({
+      uid,
       nickname,
       score,
       category,
       major,
-      createdAt: FieldValue.serverTimestamp(),
+      source: "web",
+      timestamp: FieldValue.serverTimestamp(),
     });
 
-    // 2. 통합문제만 랭킹 갱신
+    // 2. 통합문제만 랭킹 갱신 (앱과 동일 컬렉션 rankings)
     let rankUpdated = false;
     if (category === "통합문제") {
-      const ref = adminDb.collection("cbtRankings").doc(uid);
+      const ref = adminDb.collection("rankings").doc(uid);
       const existing = await ref.get();
       const existingScore = existing.exists
         ? (existing.data()?.score as number) || 0
         : 0;
       if (score > existingScore) {
         await ref.set({
-          userId: uid,
+          uid,
           nickname,
           score,
           category,
           major,
-          updatedAt: FieldValue.serverTimestamp(),
+          source: "web",
+          timestamp: FieldValue.serverTimestamp(),
         });
         rankUpdated = true;
       }
