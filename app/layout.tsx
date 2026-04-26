@@ -59,6 +59,13 @@ export default async function RootLayout({
                 >
                   Board
                 </a>
+                <a
+                  href="/cbt"
+                  className="hover:text-blue-600 transition-colors uppercase tracking-wider hidden md:inline-flex items-center gap-1"
+                >
+                  CBT
+                  <span className="text-[9px] font-extrabold bg-blue-600 text-white px-1 py-px rounded">WEB</span>
+                </a>
 
                 <span className="hidden md:inline text-gray-200">|</span>
 

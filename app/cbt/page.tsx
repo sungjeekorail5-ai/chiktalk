@@ -28,17 +28,26 @@ export default async function CbtHomePage() {
     <div className="bg-white min-h-screen md:bg-transparent md:min-h-0">
       <div className="max-w-3xl mx-auto px-5 md:px-6 py-6 md:py-10 space-y-6 md:space-y-8">
         {/* 헤더 */}
-        <header className="space-y-1">
-          <p className="text-[11px] font-extrabold tracking-[0.2em] text-blue-600 uppercase">
-            Korail CBT
-          </p>
+        <header className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-extrabold tracking-[0.2em] text-blue-600 uppercase">
+              Korail CBT
+            </p>
+            <span className="text-[9px] font-extrabold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none tracking-wider">
+              WEB
+            </span>
+          </div>
           <h1 className="text-[26px] md:text-3xl font-extrabold text-gray-900 tracking-tight">
             코레일 기출문제집
           </h1>
-          <p className="text-sm text-gray-500 font-semibold">
+          <p className="text-sm text-gray-500 font-semibold leading-relaxed">
             {nickname
               ? `${nickname}님, 오늘도 한 회차 풀어볼까요?`
-              : "기출 + AI 무한문제로 실전 대비"}
+              : "기출문제 + AI 사규문제 — 모든 기능"}
+            <br />
+            <span className="text-blue-600 font-bold">
+              iOS·Android·PC 어디서든 동일하게 풀 수 있어요.
+            </span>
           </p>
         </header>
 

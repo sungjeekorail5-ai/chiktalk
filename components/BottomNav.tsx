@@ -27,7 +27,7 @@ export default function BottomNav() {
       ),
     },
     {
-      name: "앱 보관함",
+      name: "앱",
       path: "/apps",
       icon: (active: boolean) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
@@ -35,6 +35,19 @@ export default function BottomNav() {
           <rect x="14" y="3" width="7" height="7" rx="1.5" />
           <rect x="3" y="14" width="7" height="7" rx="1.5" />
           <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      ),
+    },
+    {
+      name: "CBT",
+      path: "/cbt",
+      badge: "WEB",
+      icon: (active: boolean) => (
+        // 시험지/체크리스트 라인 아이콘
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <path d="M9 13l2 2 4-4" />
         </svg>
       ),
     },
@@ -64,7 +77,7 @@ export default function BottomNav() {
             <Link
               key={item.name}
               href={item.path as any}
-              className="flex flex-col items-center justify-center w-full h-full gap-0.5 active:scale-95 transition-transform"
+              className="flex flex-col items-center justify-center w-full h-full gap-0.5 active:scale-95 transition-transform relative"
             >
               <span className={isActive ? "text-blue-600" : "text-gray-300"}>
                 {item.icon(isActive)}
@@ -76,6 +89,11 @@ export default function BottomNav() {
               >
                 {item.name}
               </span>
+              {item.badge && (
+                <span className="absolute top-1 right-3 text-[8px] font-extrabold bg-blue-600 text-white px-1 py-px rounded-md leading-none tracking-wider">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}
