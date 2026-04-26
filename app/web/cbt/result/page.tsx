@@ -115,7 +115,9 @@ export default function CbtResultPage() {
     );
   }
 
-  const percent = Math.round((result.correct / result.total) * 100);
+  const isInfinite = result.mode === "infinite";
+  const percent =
+    result.total > 0 ? Math.round((result.correct / result.total) * 100) : 0;
   const m = Math.floor(result.durationSeconds / 60);
   const s = result.durationSeconds % 60;
   const timeStr = `${m}:${s.toString().padStart(2, "0")}`;
@@ -128,22 +130,42 @@ export default function CbtResultPage() {
     <div className="bg-gray-50 min-h-screen pb-24">
       <div className="max-w-2xl mx-auto px-5 md:px-6 py-6 md:py-10 space-y-6">
         {/* ──────────── 점수 카드 ──────────── */}
-        <div className="bg-blue-700 text-white p-7 md:p-8 rounded-3xl text-center space-y-2">
-          <p className="text-[11px] font-extrabold tracking-[0.3em] opacity-80">
-            결과
-          </p>
-          <p className="text-6xl md:text-7xl font-extrabold tabular-nums leading-none">
-            {result.correct}
-            <span className="text-3xl md:text-4xl opacity-60 font-bold">
-              {" "}/ {result.total}
-            </span>
-          </p>
-          <p className="text-sm font-semibold opacity-90 mt-2">
-            정답률 {percent}% · 소요 시간 {timeStr}
-          </p>
-        </div>
+        {isInfinite ? (
+          <div className="bg-gradient-to-br from-amber-500 to-red-500 text-white p-7 md:p-8 rounded-3xl text-center space-y-2">
+            <p className="text-[11px] font-extrabold tracking-[0.3em] opacity-80">
+              {wrongCount > 0 ? "GAME OVER" : "PERFECT"}
+            </p>
+            <p className="text-7xl md:text-8xl font-extrabold tabular-nums leading-none">
+              {result.score}
+            </p>
+            <p className="text-sm font-bold opacity-90 mt-2">
+              연속 정답 · 소요 시간 {timeStr}
+            </p>
+            {wrongCount === 0 && (
+              <p className="text-xs opacity-80 mt-1">
+                모든 문제를 다 맞췄어요!
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="bg-blue-700 text-white p-7 md:p-8 rounded-3xl text-center space-y-2">
+            <p className="text-[11px] font-extrabold tracking-[0.3em] opacity-80">
+              결과
+            </p>
+            <p className="text-6xl md:text-7xl font-extrabold tabular-nums leading-none">
+              {result.correct}
+              <span className="text-3xl md:text-4xl opacity-60 font-bold">
+                {" "}/ {result.total}
+              </span>
+            </p>
+            <p className="text-sm font-semibold opacity-90 mt-2">
+              정답률 {percent}% · 소요 시간 {timeStr}
+            </p>
+          </div>
+        )}
 
-        {/* ──────────── 통계 3종 ──────────── */}
+        {/* ──────────── 통계 3종 (기출/오답만) ──────────── */}
+        {!isInfinite && (
         <div className="grid grid-cols-3 gap-2 md:gap-3">
           <Stat
             label="맞은 문제"
@@ -157,40 +179,49 @@ export default function CbtResultPage() {
             color="text-gray-500"
           />
         </div>
+        )}
 
         {/* ──────────── 오답 리뷰 헤더 + 필터 ──────────── */}
         <div className="space-y-3">
           <div className="flex items-end justify-between">
             <div>
               <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-gray-900">
-                {filter === "wrong" ? "오답 · 미응답 리뷰" : "전체 문제 리뷰"}
+                {isInfinite
+                  ? wrongCount > 0
+                    ? "틀린 문제"
+                    : "푼 문제"
+                  : filter === "wrong"
+                  ? "오답 · 미응답 리뷰"
+                  : "전체 문제 리뷰"}
               </h2>
               <p className="text-xs text-gray-500 font-semibold mt-0.5">
                 정답 = 초록, 선택한 오답 = 빨강
               </p>
             </div>
-            <div className="flex gap-1 p-1 bg-gray-200 rounded-xl">
-              <button
-                onClick={() => setFilter("wrong")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-colors ${
-                  filter === "wrong"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500"
-                }`}
-              >
-                오답만
-              </button>
-              <button
-                onClick={() => setFilter("all")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-colors ${
-                  filter === "all"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500"
-                }`}
-              >
-                전체
-              </button>
-            </div>
+            {!isInfinite && (
+              <div className="flex gap-1 p-1 bg-gray-200 rounded-xl">
+                <button
+                  onClick={() => setFilter("wrong")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-colors ${
+                    filter === "wrong"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  오답만
+                </button>
+                <button
+                  onClick={() => setFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-colors ${
+                    filter === "all"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  전체
+                </button>
+              </div>
+            )}
           </div>
 
           {visibleItems.length === 0 ? (
@@ -218,18 +249,37 @@ export default function CbtResultPage() {
 
         {/* ──────────── 액션 ──────────── */}
         <div className="space-y-2 pt-4">
-          <Link
-            href="/web/cbt/select"
-            className="block w-full text-center bg-gray-900 active:bg-blue-700 text-white font-extrabold py-4 rounded-2xl transition-colors"
-          >
-            다른 시험 풀러 가기
-          </Link>
-          <Link
-            href="/web/cbt"
-            className="block w-full text-center bg-white active:bg-gray-50 border border-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-colors"
-          >
-            CBT 홈
-          </Link>
+          {isInfinite ? (
+            <>
+              <Link
+                href="/web/cbt/infinite"
+                className="block w-full text-center bg-amber-500 active:bg-amber-600 text-white font-extrabold py-4 rounded-2xl transition-colors"
+              >
+                다시 도전
+              </Link>
+              <Link
+                href="/web/cbt/ranking"
+                className="block w-full text-center bg-white active:bg-gray-50 border border-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-colors"
+              >
+                랭킹 보기
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/web/cbt/select"
+                className="block w-full text-center bg-gray-900 active:bg-blue-700 text-white font-extrabold py-4 rounded-2xl transition-colors"
+              >
+                다른 시험 풀러 가기
+              </Link>
+              <Link
+                href="/web/cbt"
+                className="block w-full text-center bg-white active:bg-gray-50 border border-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-colors"
+              >
+                CBT 홈
+              </Link>
+            </>
+          )}
         </div>
 
         {/* ──────────── 오답노트 저장 상태 안내 ──────────── */}

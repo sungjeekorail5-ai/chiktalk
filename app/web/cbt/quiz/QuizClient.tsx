@@ -5,9 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   loadCbtData,
   pickExamQuestions,
+  pickInfinitePool,
   isCorrect,
 } from "@/lib/cbt/data";
-import type { ExamSelection, Question, QuizResult } from "@/lib/cbt/types";
+import type {
+  ExamSelection,
+  InfiniteSelection,
+  Question,
+  QuizResult,
+} from "@/lib/cbt/types";
 
 const RESULT_STORAGE_KEY = "cbt:lastResult";
 
@@ -19,6 +25,8 @@ export default function QuizClient() {
   const yearsParam = params.get("years") || "";
   const major = params.get("major") || "";
   const subject = params.get("subject") || "";
+  const category = params.get("category") || "";
+  const source = params.get("source") || "";
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +36,11 @@ export default function QuizClient() {
   const [isTimerRunning, setIsTimerRunning] = useState(true);
   const [showOmr, setShowOmr] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+
+  // 무한 모드 전용 상태
+  const [infiniteChecked, setInfiniteChecked] = useState(false);
+  const [infiniteScore, setInfiniteScore] = useState(0);
+  const [infiniteGameOver, setInfiniteGameOver] = useState(false);
 
   // 데이터 로드 + 출제
   useEffect(() => {
@@ -44,6 +57,21 @@ export default function QuizClient() {
           if (picked.length === 0) {
             alert("선택한 조건의 기출문제가 없습니다.");
             router.replace("/web/cbt/select");
+            return;
+          }
+          setQuestions(picked);
+          setUserAnswers(new Array(picked.length).fill(-1));
+          setIsLoading(false);
+          return;
+        }
+
+        if (mode === "infinite") {
+          const { aiQuestions } = await loadCbtData();
+          const selection: InfiniteSelection = { category, source, major };
+          const picked = pickInfinitePool(aiQuestions, selection);
+          if (picked.length === 0) {
+            alert("선택한 사규의 AI 문제가 없습니다.");
+            router.replace("/web/cbt/infinite");
             return;
           }
           setQuestions(picked);
@@ -131,12 +159,12 @@ export default function QuizClient() {
     );
   }
 
-  if (mode !== "exam" && mode !== "wrong") {
+  if (mode !== "exam" && mode !== "wrong" && mode !== "infinite") {
     return (
       <div className="max-w-md mx-auto px-5 py-12 text-center space-y-4">
         <div className="text-4xl">🚧</div>
         <p className="text-lg font-extrabold text-gray-900">
-          이 모드는 다음 단계에서 구현 예정이에요
+          알 수 없는 모드입니다
         </p>
         <button
           onClick={() => router.push("/web/cbt")}
@@ -152,8 +180,65 @@ export default function QuizClient() {
   const currentSelected = userAnswers[currentIndex];
   const isLast = currentIndex === questions.length - 1;
   const solvedCount = userAnswers.filter((a) => a !== -1).length;
+  const isInfinite = mode === "infinite";
+
+  // 무한 모드: 현재 문제 채점
+  const checkInfiniteAnswer = () => {
+    if (currentSelected === -1) return;
+    setInfiniteChecked(true);
+    if (isCorrect(currentSelected, currentQ.answer)) {
+      setInfiniteScore((s) => s + 1);
+    } else {
+      setInfiniteGameOver(true);
+    }
+  };
+
+  const goNextInfinite = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((i) => i + 1);
+      setInfiniteChecked(false);
+    } else {
+      // 모든 문제 다 풀었으면 결과로
+      finishInfinite();
+    }
+  };
+
+  const finishInfinite = async () => {
+    const result: QuizResult = {
+      mode: "infinite",
+      total: infiniteScore + (infiniteGameOver ? 1 : 0),
+      correct: infiniteScore,
+      score: infiniteScore,
+      durationSeconds: seconds,
+      questions: [currentQ],
+      userAnswers: [currentSelected],
+      wrongList: infiniteGameOver
+        ? [{ question: currentQ, selectedIndex: currentSelected }]
+        : [],
+    };
+    try {
+      sessionStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(result));
+    } catch {}
+
+    // 점수 등록 (랭킹/기록)
+    try {
+      await fetch("/api/cbt/ranking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          score: infiniteScore,
+          category: category || "통합문제",
+          major: major || "",
+        }),
+      });
+    } catch {}
+
+    router.push("/web/cbt/result" as any);
+  };
 
   const selectOption = (idx: number) => {
+    // 무한 모드: 채점된 후엔 변경 불가
+    if (isInfinite && infiniteChecked) return;
     setUserAnswers((prev) => {
       const next = [...prev];
       next[currentIndex] = idx;
@@ -243,45 +328,66 @@ export default function QuizClient() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* ──────────── 상단 AppBar ──────────── */}
-      <header className="sticky top-0 z-40 bg-blue-700 text-white">
+      <header
+        className={`sticky top-0 z-40 text-white ${
+          isInfinite ? "bg-amber-500" : "bg-blue-700"
+        }`}
+      >
         <div className="flex items-center justify-between h-12 md:h-14 px-2">
-          <button
-            onClick={goPrev}
-            disabled={currentIndex === 0}
-            className="p-2 disabled:opacity-30 active:bg-white/10 rounded-lg"
-            aria-label="이전 문제"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-
-          <button
-            onClick={() => setShowOmr(true)}
-            className="flex items-center gap-1.5 bg-white/15 active:bg-white/25 px-3.5 py-1.5 rounded-full transition-colors"
-          >
-            <span className="text-sm font-bold">
-              {currentIndex + 1} / {questions.length}
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-            </svg>
-          </button>
-
-          <div className="flex items-center">
+          {isInfinite ? (
+            <span className="w-10" />
+          ) : (
             <button
-              onClick={goNext}
-              disabled={currentIndex === questions.length - 1}
+              onClick={goPrev}
+              disabled={currentIndex === 0}
               className="p-2 disabled:opacity-30 active:bg-white/10 rounded-lg"
-              aria-label="다음 문제"
+              aria-label="이전 문제"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
+                <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
+          )}
+
+          {isInfinite ? (
+            <div className="flex items-center gap-1.5 bg-white/15 px-3.5 py-1.5 rounded-full">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z" />
+              </svg>
+              <span className="text-sm font-extrabold tabular-nums">
+                {infiniteScore} 연속
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowOmr(true)}
+              className="flex items-center gap-1.5 bg-white/15 active:bg-white/25 px-3.5 py-1.5 rounded-full transition-colors"
+            >
+              <span className="text-sm font-bold">
+                {currentIndex + 1} / {questions.length}
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+              </svg>
+            </button>
+          )}
+
+          <div className="flex items-center">
+            {!isInfinite && (
+              <button
+                onClick={goNext}
+                disabled={currentIndex === questions.length - 1}
+                className="p-2 disabled:opacity-30 active:bg-white/10 rounded-lg"
+                aria-label="다음 문제"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+            )}
             <button
               onClick={() => setShowExitDialog(true)}
               className="p-2 active:bg-white/10 rounded-lg"
@@ -294,18 +400,26 @@ export default function QuizClient() {
             </button>
           </div>
         </div>
-        {/* 진행률 바 */}
-        <div className="h-1 bg-blue-900/30">
-          <div
-            className="h-full bg-white transition-all duration-200"
-            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-          />
-        </div>
+        {/* 진행률 바 (무한 모드는 표시 안 함) */}
+        {!isInfinite && (
+          <div className="h-1 bg-blue-900/30">
+            <div
+              className="h-full bg-white transition-all duration-200"
+              style={{
+                width: `${((currentIndex + 1) / questions.length) * 100}%`,
+              }}
+            />
+          </div>
+        )}
       </header>
 
       {/* ──────────── 타이머 ──────────── */}
       <div className="bg-white px-5 md:px-6 py-3 flex items-center justify-between border-b border-gray-100">
-        <div className="flex items-center gap-2 text-blue-700">
+        <div
+          className={`flex items-center gap-2 ${
+            isInfinite ? "text-amber-600" : "text-blue-700"
+          }`}
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
@@ -382,38 +496,68 @@ export default function QuizClient() {
             <div className="space-y-2.5">
               {currentQ.options.map((opt, idx) => {
                 const isSelected = currentSelected === idx;
+                const isAnswer = idx + 1 === currentQ.answer;
+                let cls =
+                  "bg-white border-2 border-gray-200 active:bg-gray-50";
+                let numCls = "bg-gray-100 text-gray-500";
+                let textCls = "text-gray-800 font-medium";
+
+                if (isInfinite && infiniteChecked) {
+                  if (isAnswer) {
+                    cls = "bg-green-50 border-2 border-green-500";
+                    numCls = "bg-green-500 text-white";
+                    textCls = "text-green-900 font-bold";
+                  } else if (isSelected) {
+                    cls = "bg-red-50 border-2 border-red-400";
+                    numCls = "bg-red-500 text-white";
+                    textCls = "text-red-800 font-bold";
+                  }
+                } else if (isSelected) {
+                  cls =
+                    "bg-blue-50 border-2 " +
+                    (isInfinite ? "border-amber-500" : "border-blue-600");
+                  numCls = isInfinite
+                    ? "bg-amber-500 text-white"
+                    : "bg-blue-600 text-white";
+                  textCls = "text-blue-900 font-bold";
+                }
+
                 return (
                   <button
                     key={idx}
                     onClick={() => selectOption(idx)}
-                    className={`w-full text-left flex items-start gap-3 px-4 py-4 rounded-2xl transition-all ${
-                      isSelected
-                        ? "bg-blue-50 border-2 border-blue-600"
-                        : "bg-white border-2 border-gray-200 active:bg-gray-50"
-                    }`}
+                    className={`w-full text-left flex items-start gap-3 px-4 py-4 rounded-2xl transition-all ${cls}`}
                   >
                     <span
-                      className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-extrabold ${
-                        isSelected
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
+                      className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-extrabold ${numCls}`}
                     >
                       {idx + 1}
                     </span>
-                    <span
-                      className={`flex-1 text-[15px] leading-relaxed ${
-                        isSelected
-                          ? "text-blue-900 font-bold"
-                          : "text-gray-800 font-medium"
-                      }`}
-                    >
+                    <span className={`flex-1 text-[15px] leading-relaxed ${textCls}`}>
                       {opt}
                     </span>
                   </button>
                 );
               })}
             </div>
+
+            {/* 무한 모드: AI 풀이 (채점 후) */}
+            {isInfinite && infiniteChecked && currentQ.explanation && (
+              <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                  </svg>
+                  <span className="text-[11px] font-extrabold text-indigo-700">
+                    정답 풀이
+                  </span>
+                </div>
+                <p className="text-[13px] text-indigo-900 leading-relaxed font-medium whitespace-pre-wrap">
+                  {currentQ.explanation}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -421,21 +565,51 @@ export default function QuizClient() {
       {/* ──────────── 하단 버튼 ──────────── */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5 md:px-6 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] z-30">
         <div className="max-w-2xl mx-auto">
-          <button
-            onClick={isLast ? submit : goNext}
-            className={`w-full py-4 rounded-2xl font-extrabold text-white transition-all active:scale-[0.98] ${
-              isLast
-                ? "bg-blue-700 active:bg-blue-800"
-                : "bg-gray-900 active:bg-blue-700"
-            }`}
-          >
-            {isLast ? "채점 및 결과 보기" : "다음 문제"}
-          </button>
+          {isInfinite ? (
+            // ─── 무한 모드 버튼 흐름 ───
+            !infiniteChecked ? (
+              // 답 선택 → 정답 확인
+              <button
+                onClick={checkInfiniteAnswer}
+                disabled={currentSelected === -1}
+                className="w-full py-4 rounded-2xl font-extrabold text-white transition-all active:scale-[0.98] bg-amber-500 active:bg-amber-600 disabled:bg-gray-300"
+              >
+                정답 확인
+              </button>
+            ) : infiniteGameOver ? (
+              // 게임오버 → 결과 보기
+              <button
+                onClick={finishInfinite}
+                className="w-full py-4 rounded-2xl font-extrabold text-white transition-all active:scale-[0.98] bg-red-500 active:bg-red-600"
+              >
+                결과 보기 ({infiniteScore}연속 정답)
+              </button>
+            ) : (
+              // 정답 → 다음 문제
+              <button
+                onClick={goNextInfinite}
+                className="w-full py-4 rounded-2xl font-extrabold text-white transition-all active:scale-[0.98] bg-green-600 active:bg-green-700"
+              >
+                다음 문제
+              </button>
+            )
+          ) : (
+            <button
+              onClick={isLast ? submit : goNext}
+              className={`w-full py-4 rounded-2xl font-extrabold text-white transition-all active:scale-[0.98] ${
+                isLast
+                  ? "bg-blue-700 active:bg-blue-800"
+                  : "bg-gray-900 active:bg-blue-700"
+              }`}
+            >
+              {isLast ? "채점 및 결과 보기" : "다음 문제"}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ──────────── OMR 답안지 모달 ──────────── */}
-      {showOmr && (
+      {/* ──────────── OMR 답안지 모달 (무한 모드 제외) ──────────── */}
+      {showOmr && !isInfinite && (
         <OmrSheet
           total={questions.length}
           solved={solvedCount}
