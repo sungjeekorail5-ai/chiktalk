@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createDefaultUserData, type UserData } from "@/lib/payroll/types";
 import InputWizard from "./InputWizard";
 import ResultView from "./ResultView";
+import PerformanceView from "./PerformanceView";
 
 const STORAGE_KEY = "payroll:userData";
 
@@ -175,8 +176,8 @@ export default function PayrollPage() {
           />
         )}
         {tab === 1 && <ResultView user={userData} mode="WAGE_COMPARE" />}
+        {tab === 2 && <PerformanceView user={userData} update={updateUser} />}
         {tab === 3 && <ResultView user={userData} mode="PAY_CHECK" />}
-        {tab === 2 && <Placeholder phase={tab} />}
         {tab === 4 && <Placeholder phase={tab} />}
       </div>
 
