@@ -6,6 +6,12 @@ import { usePathname } from "next/navigation";
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // 풀이/시험 진행 중인 페이지에서는 BottomNav 숨김 (몰입 방해 X)
+  const isImmersivePage =
+    pathname.startsWith("/web/cbt/quiz") ||
+    pathname.startsWith("/web/cbt/result");
+  if (isImmersivePage) return null;
+
   const navItems = [
     {
       name: "홈",
