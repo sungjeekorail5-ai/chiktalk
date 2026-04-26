@@ -10,9 +10,7 @@ interface WebApp {
   description: string;
   href: string;
   available: boolean;
-  iconBg: string;
-  iconColor: string;
-  icon: React.ReactNode;
+  iconUrl: string; // /web/icons/*.png
 }
 
 // 향후 확장: korail_3D 등 추가될 자리
@@ -25,15 +23,7 @@ const WEB_APPS: WebApp[] = [
       "5,979개 기출문제와 950개 AI 사규문제를 풀고 채점받을 수 있어요.",
     href: "/web/cbt",
     available: true,
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <path d="M9 13l2 2 4-4" />
-      </svg>
-    ),
+    iconUrl: "/web/icons/cbt.png",
   },
   {
     id: "payroll",
@@ -43,14 +33,7 @@ const WEB_APPS: WebApp[] = [
       "호봉제·연봉제 모두 지원. 단계별 입력으로 통상임금과 예상 급여를 계산해요.",
     href: "/web/payroll",
     available: true,
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-600",
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23" />
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
+    iconUrl: "/web/icons/payroll.png",
   },
 ];
 
@@ -174,11 +157,16 @@ function AppCard({ app, isStaff }: { app: WebApp; isStaff: boolean }) {
     >
       <div className="flex items-center gap-4">
         <div
-          className={`w-14 h-14 md:w-16 md:h-16 shrink-0 ${
-            isStaff ? `${app.iconBg} ${app.iconColor}` : "bg-gray-100 text-gray-400"
-          } rounded-2xl flex items-center justify-center`}
+          className={`w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-2xl overflow-hidden bg-white ${
+            !isStaff ? "grayscale" : ""
+          }`}
         >
-          {app.icon}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={app.iconUrl}
+            alt={app.name}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
