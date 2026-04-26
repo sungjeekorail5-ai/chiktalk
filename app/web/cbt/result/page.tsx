@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Question, QuizResult } from "@/lib/cbt/types";
 import { isCorrect } from "@/lib/cbt/data";
+import QuestionImage from "@/components/cbt/QuestionImage";
 
 const RESULT_STORAGE_KEY = "cbt:lastResult";
 
@@ -116,6 +117,7 @@ export default function CbtResultPage() {
   }
 
   const isInfinite = result.mode === "infinite";
+  const isWrong = result.mode === "wrong";
   const percent =
     result.total > 0 ? Math.round((result.correct / result.total) * 100) : 0;
   const m = Math.floor(result.durationSeconds / 60);
@@ -262,6 +264,21 @@ export default function CbtResultPage() {
                 className="block w-full text-center bg-white active:bg-gray-50 border border-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-colors"
               >
                 랭킹 보기
+              </Link>
+            </>
+          ) : isWrong ? (
+            <>
+              <Link
+                href="/web/cbt/wrong"
+                className="block w-full text-center bg-purple-700 active:bg-purple-800 text-white font-extrabold py-4 rounded-2xl transition-colors"
+              >
+                오답노트로 돌아가기
+              </Link>
+              <Link
+                href="/web/cbt"
+                className="block w-full text-center bg-white active:bg-gray-50 border border-gray-200 text-gray-700 font-bold py-4 rounded-2xl transition-colors"
+              >
+                CBT 홈
               </Link>
             </>
           ) : (
@@ -432,16 +449,11 @@ function ReviewCard({
       </p>
 
       {/* 이미지 */}
-      {q.imageUrl && (
-        <div className="rounded-xl overflow-hidden bg-gray-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={q.imageUrl}
-            alt="문제 이미지"
-            className="w-full h-auto max-h-[30vh] object-contain"
-          />
-        </div>
-      )}
+      <QuestionImage
+        src={q.imageUrl}
+        className="w-full h-auto max-h-[30vh] object-contain"
+        containerClassName="rounded-xl overflow-hidden bg-gray-50"
+      />
 
       {/* 보기 */}
       <div className="space-y-1.5">

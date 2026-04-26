@@ -8,6 +8,7 @@ import {
   pickInfinitePool,
   isCorrect,
 } from "@/lib/cbt/data";
+import QuestionImage from "@/components/cbt/QuestionImage";
 import type {
   ExamSelection,
   InfiniteSelection,
@@ -532,16 +533,7 @@ export default function QuizClient() {
               {currentIndex + 1}. {currentQ.question}
             </h2>
 
-            {currentQ.imageUrl && (
-              <div className="rounded-2xl overflow-hidden bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentQ.imageUrl}
-                  alt="문제 이미지"
-                  className="w-full h-auto max-h-[40vh] object-contain"
-                />
-              </div>
-            )}
+            <QuestionImage src={currentQ.imageUrl} />
 
             <div className="space-y-2.5">
               {currentQ.options.map((opt, idx) => {
