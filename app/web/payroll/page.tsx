@@ -6,6 +6,7 @@ import { createDefaultUserData, type UserData } from "@/lib/payroll/types";
 import InputWizard from "./InputWizard";
 import ResultView from "./ResultView";
 import PerformanceView from "./PerformanceView";
+import EtcView from "./EtcView";
 
 const STORAGE_KEY = "payroll:userData";
 
@@ -178,7 +179,7 @@ export default function PayrollPage() {
         {tab === 1 && <ResultView user={userData} mode="WAGE_COMPARE" />}
         {tab === 2 && <PerformanceView user={userData} update={updateUser} />}
         {tab === 3 && <ResultView user={userData} mode="PAY_CHECK" />}
-        {tab === 4 && <Placeholder phase={tab} />}
+        {tab === 4 && <EtcView />}
       </div>
 
       {/* 공지 모달 (첫 진입 시 1회) */}
@@ -198,20 +199,11 @@ export default function PayrollPage() {
 // 미구현 탭 placeholder (P3·P4·P5에서 채움)
 // ─────────────────────────────────────────────────────
 function Placeholder({ phase }: { phase: number }) {
-  const labels: Record<number, string> = {
-    1: "통상임금 — P3에서 구현",
-    2: "실적입력 — P4에서 구현",
-    3: "급여조회 — P3에서 구현",
-    4: "기타 — P5에서 구현",
-  };
   return (
     <div className="px-5 py-16 text-center space-y-2">
       <div className="text-4xl">🚧</div>
       <p className="text-base font-extrabold text-gray-900">
-        {labels[phase] ?? ""}
-      </p>
-      <p className="text-xs text-gray-500">
-        다음 단계에서 구현될 예정이에요.
+        준비 중인 화면입니다
       </p>
     </div>
   );
