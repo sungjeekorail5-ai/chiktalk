@@ -5,7 +5,6 @@ import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface Post {
   id: string;
@@ -16,7 +15,6 @@ interface Post {
 
 export default function MyPostsPage() {
   const { user } = useAuth();
-  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,26 +23,18 @@ export default function MyPostsPage() {
 
     const fetchMyPosts = async () => {
       try {
-        // 💡 1. 서랍 이름 맞추기: 'board' -> 'posts'
-        const postsRef = collection(db, "posts"); 
-        
-        // 💡 2. 유저 ID로 내 글만 검색 (닉네임은 중복 가능하므로 ID 사용)
+        const postsRef = collection(db, "posts");
         const q = query(
           postsRef,
           where("authorId", "==", user.id),
           orderBy("createdAt", "desc")
         );
-
-        const querySnapshot = await getDocs(q);
-        const fetchedPosts = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Post[];
-
-        setPosts(fetchedPosts);
-      } catch (error: any) {
-        console.error("내 글을 불러오는 중 에러 발생:", error);
-        // 🚨 혹시 Firestore 인덱스 에러가 나면 콘솔창의 링크를 클릭해서 인덱스를 생성해주세요!
+        const snap = await getDocs(q);
+        setPosts(
+          snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Post[]
+        );
+      } catch (error) {
+        console.error("내 글을 불러오는 중 에러:", error);
       } finally {
         setIsLoading(false);
       }
@@ -53,69 +43,81 @@ export default function MyPostsPage() {
     fetchMyPosts();
   }, [user]);
 
-  // 💡 3. 날짜 에러 방어 로직 (텍스트 날짜와 파이어베이스 날짜 모두 호환되게 처리)
   const formatDate = (dateData: any) => {
-    if (!dateData) return '날짜 정보 없음';
-    if (typeof dateData === 'string') return new Date(dateData).toLocaleDateString("ko-KR");
+    if (!dateData) return "";
+    if (typeof dateData === "string")
+      return new Date(dateData).toLocaleDateString("ko-KR");
     if (dateData.toDate) return dateData.toDate().toLocaleDateString("ko-KR");
     if (dateData.seconds || dateData._seconds) {
       const s = dateData.seconds || dateData._seconds;
       return new Date(s * 1000).toLocaleDateString("ko-KR");
     }
-    return '날짜 정보 없음';
+    return "";
   };
 
   return (
-    <div className="px-4 py-6 max-w-2xl mx-auto space-y-6 animate-fade-in">
-      
-      {/* 🔙 뒤로가기 버튼 & 타이틀 */}
-      <div className="flex items-center gap-3 mb-6 sm:mb-8">
-        <button onClick={() => router.back()} className="text-2xl text-gray-400 hover:text-gray-900 transition-colors active:scale-90">
-          ❮
-        </button>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-            내가 쓴 글 <span className="text-blue-600">📝</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-400 font-bold mt-1">탑승객님이 남기신 발자취입니다.</p>
-        </div>
+    <div className="bg-white min-h-screen md:bg-transparent md:min-h-0">
+      {/* 모바일 백 네비 */}
+      <div className="md:hidden flex items-center px-5 h-12 sticky top-14 bg-white/95 backdrop-blur-sm z-30 border-b border-gray-50">
+        <Link
+          href="/profile"
+          className="flex items-center gap-1 text-gray-900 -ml-2 px-2 py-1.5 active:bg-gray-100 rounded-lg"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          <span className="text-sm font-bold">뒤로</span>
+        </Link>
       </div>
 
-      {/* 📋 게시글 리스트 영역 */}
-      <div className="space-y-4">
+      <div className="max-w-2xl mx-auto px-5 md:px-4 py-6 space-y-5">
+        <div>
+          <h1 className="text-[22px] md:text-2xl font-extrabold text-gray-900 tracking-tight">
+            내가 쓴 글
+          </h1>
+          <p className="text-sm text-gray-400 font-semibold mt-1">
+            지금까지 남기신 발자취예요
+          </p>
+        </div>
+
         {isLoading ? (
-          <div className="text-center py-20 text-gray-400 font-bold">
-            <span className="inline-block animate-spin mr-2">🔄</span> 글을 불러오는 중...
+          <div className="text-center py-20 text-gray-400 font-bold text-sm">
+            불러오는 중...
           </div>
         ) : posts.length > 0 ? (
-          posts.map((post) => (
-            <Link 
-              key={post.id} 
-              href={`/board/${post.id}`} 
-              className="block bg-white p-5 sm:p-6 rounded-[1.5rem] shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all active:scale-[0.98]"
-            >
-              <h3 className="text-lg font-black text-gray-900 truncate mb-2">
-                {post.title}
-              </h3>
-              <p className="text-sm text-gray-500 truncate mb-3">
-                {post.content}
-              </p>
-              <div className="text-[11px] font-bold text-gray-400">
-                {formatDate(post.createdAt)}
-              </div>
-            </Link>
-          ))
+          <div className="bg-white md:rounded-2xl md:border md:border-gray-100 divide-y divide-gray-50 overflow-hidden">
+            {posts.map((post) => (
+              <Link
+                key={post.id}
+                href={`/board/${post.id}` as any}
+                className="block px-5 py-4 active:bg-gray-50 transition-colors"
+              >
+                <h3 className="text-[16px] font-bold text-gray-900 tracking-tight truncate mb-1">
+                  {post.title}
+                </h3>
+                <p className="text-[13px] text-gray-500 line-clamp-2 leading-snug font-medium">
+                  {post.content}
+                </p>
+                <div className="text-[11px] font-semibold text-gray-400 mt-2">
+                  {formatDate(post.createdAt)}
+                </div>
+              </Link>
+            ))}
+          </div>
         ) : (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2rem] py-20 text-center">
-            <div className="text-4xl mb-4 opacity-50">📭</div>
-            <p className="text-sm sm:text-base text-gray-500 font-black mb-4">아직 작성하신 글이 없습니다.</p>
-            <Link href="/board" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-xl transition-all active:scale-95 text-sm">
-              첫 글 쓰러 가기 ✍️
+          <div className="bg-gray-50 rounded-3xl py-16 text-center">
+            <p className="text-sm text-gray-500 font-bold mb-4">
+              아직 작성하신 글이 없어요
+            </p>
+            <Link
+              href="/board"
+              className="inline-block bg-blue-600 active:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              첫 글 쓰러 가기
             </Link>
           </div>
         )}
       </div>
-
     </div>
   );
 }
