@@ -32,13 +32,10 @@ export default async function EditPage({ params }: Props) {
 
   // 2. 긁어온 데이터를 클라이언트 컴포넌트(입력폼)로 넘겨줍니다!
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 space-y-6">
-      <h1 className="text-3xl font-black text-gray-900 tracking-tight">✏️ 게시글 수정하기</h1>
-      <EditClient
-        postId={id}
-        initialTitle={post?.title || ""}
-        initialContent={post?.content || ""}
-      />
-    </div>
+    <EditClient
+      postId={id}
+      initialTitle={post?.title || ""}
+      initialContent={post?.content || ""}
+    />
   );
 }
