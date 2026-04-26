@@ -42,6 +42,11 @@ export default function QuizClient() {
   const [infiniteScore, setInfiniteScore] = useState(0);
   const [infiniteGameOver, setInfiniteGameOver] = useState(false);
 
+  // AI 문제 평가 (무한+AI 한정)
+  const [ratingPhase, setRatingPhase] = useState(false);
+  const [ratingDone, setRatingDone] = useState<string | null>(null);
+  const [showRatingInfo, setShowRatingInfo] = useState(false);
+
   // 데이터 로드 + 출제
   useEffect(() => {
     (async () => {
@@ -193,10 +198,47 @@ export default function QuizClient() {
     }
   };
 
+  // 무한 모드 "정답 확인" 버튼 핸들러
+  // - AI 문제면 평가 단계 진입
+  // - 일반 문제면 즉시 채점
+  const handleInfiniteCheckClick = () => {
+    if (currentSelected === -1) return;
+    if (currentQ.isAI && !ratingPhase && !ratingDone) {
+      setRatingPhase(true);
+      return;
+    }
+    checkInfiniteAnswer();
+  };
+
+  // 평가 제출 → API 호출 + 채점
+  const submitRating = async (rating: "good" | "bad" | "wrong") => {
+    const questionId = `${currentQ.source ?? "unknown"}_${currentQ.no}`;
+    try {
+      await fetch("/api/cbt/question-rating", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId, rating }),
+      });
+    } catch {
+      // 저장 실패해도 채점은 진행
+    }
+    setRatingDone(rating);
+    setRatingPhase(false);
+    checkInfiniteAnswer();
+  };
+
+  const skipRating = () => {
+    setRatingPhase(false);
+    setRatingDone("skip");
+    checkInfiniteAnswer();
+  };
+
   const goNextInfinite = () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((i) => i + 1);
       setInfiniteChecked(false);
+      setRatingPhase(false);
+      setRatingDone(null);
     } else {
       // 모든 문제 다 풀었으면 결과로
       finishInfinite();
@@ -330,7 +372,11 @@ export default function QuizClient() {
       {/* ──────────── 상단 AppBar ──────────── */}
       <header
         className={`sticky top-0 z-40 text-white ${
-          isInfinite ? "bg-amber-500" : "bg-blue-700"
+          isInfinite
+            ? "bg-amber-500"
+            : mode === "wrong"
+            ? "bg-purple-700"
+            : "bg-blue-700"
         }`}
       >
         <div className="flex items-center justify-between h-12 md:h-14 px-2">
@@ -417,7 +463,11 @@ export default function QuizClient() {
       <div className="bg-white px-5 md:px-6 py-3 flex items-center justify-between border-b border-gray-100">
         <div
           className={`flex items-center gap-2 ${
-            isInfinite ? "text-amber-600" : "text-blue-700"
+            isInfinite
+              ? "text-amber-600"
+              : mode === "wrong"
+              ? "text-purple-700"
+              : "text-blue-700"
           }`}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -541,6 +591,15 @@ export default function QuizClient() {
               })}
             </div>
 
+            {/* 무한 모드 + AI: 평가 위젯 (정답 확인 누르면 등장) */}
+            {isInfinite && ratingPhase && currentQ.isAI && (
+              <RatingWidget
+                onRate={submitRating}
+                onSkip={skipRating}
+                onShowInfo={() => setShowRatingInfo(true)}
+              />
+            )}
+
             {/* 무한 모드: AI 풀이 (채점 후) */}
             {isInfinite && infiniteChecked && currentQ.explanation && (
               <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
@@ -568,14 +627,21 @@ export default function QuizClient() {
           {isInfinite ? (
             // ─── 무한 모드 버튼 흐름 ───
             !infiniteChecked ? (
-              // 답 선택 → 정답 확인
-              <button
-                onClick={checkInfiniteAnswer}
-                disabled={currentSelected === -1}
-                className="w-full py-4 rounded-2xl font-extrabold text-white transition-all active:scale-[0.98] bg-amber-500 active:bg-amber-600 disabled:bg-gray-300"
-              >
-                정답 확인
-              </button>
+              ratingPhase ? (
+                // 평가 단계 — 위에서 평가 또는 건너뛰기 누르면 진행
+                <div className="w-full py-4 rounded-2xl text-center bg-gray-100 text-gray-500 text-sm font-bold">
+                  위에서 문제를 평가해 주세요
+                </div>
+              ) : (
+                // 답 선택 → 정답 확인
+                <button
+                  onClick={handleInfiniteCheckClick}
+                  disabled={currentSelected === -1}
+                  className="w-full py-4 rounded-2xl font-extrabold text-white transition-all active:scale-[0.98] bg-amber-500 active:bg-amber-600 disabled:bg-gray-300"
+                >
+                  {currentQ.isAI ? "정답 확인 (AI 문제 평가)" : "정답 확인"}
+                </button>
+              )
             ) : infiniteGameOver ? (
               // 게임오버 → 결과 보기
               <button
@@ -628,8 +694,196 @@ export default function QuizClient() {
         <ExitDialog
           onCancel={() => setShowExitDialog(false)}
           onConfirm={handleExit}
+          isInfinite={isInfinite}
+          infiniteScore={infiniteScore}
         />
       )}
+
+      {/* ──────────── 평가 안내 다이얼로그 ──────────── */}
+      {showRatingInfo && (
+        <RatingInfoDialog onClose={() => setShowRatingInfo(false)} />
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────
+// AI 문제 평가 위젯 (좋음 / 나쁨 / 오류 + 건너뛰기)
+// ──────────────────────────────────────────────────
+function RatingWidget({
+  onRate,
+  onSkip,
+  onShowInfo,
+}: {
+  onRate: (r: "good" | "bad" | "wrong") => void;
+  onSkip: () => void;
+  onShowInfo: () => void;
+}) {
+  return (
+    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 space-y-3">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onShowInfo}
+          className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-extrabold flex items-center justify-center"
+          aria-label="평가 안내"
+        >
+          !
+        </button>
+        <span className="text-[13px] font-extrabold text-gray-900">
+          이 문제를 평가해 주세요
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <RateButton
+          label="좋음"
+          color="green"
+          onClick={() => onRate("good")}
+          icon={
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+            </svg>
+          }
+        />
+        <RateButton
+          label="나쁨"
+          color="orange"
+          onClick={() => onRate("bad")}
+          icon={
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
+            </svg>
+          }
+        />
+        <RateButton
+          label="오류"
+          color="red"
+          onClick={() => onRate("wrong")}
+          icon={
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          }
+        />
+      </div>
+
+      <button
+        onClick={onSkip}
+        className="w-full py-2 text-[12px] font-bold text-gray-400 active:text-gray-600 transition-colors"
+      >
+        평가 건너뛰기
+      </button>
+    </div>
+  );
+}
+
+function RateButton({
+  label,
+  color,
+  icon,
+  onClick,
+}: {
+  label: string;
+  color: "green" | "orange" | "red";
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
+  const palette = {
+    green: "bg-green-50 text-green-600 border-green-200 active:bg-green-100",
+    orange:
+      "bg-orange-50 text-orange-600 border-orange-200 active:bg-orange-100",
+    red: "bg-red-50 text-red-500 border-red-200 active:bg-red-100",
+  }[color];
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1 py-3 rounded-xl border ${palette} transition-colors active:scale-[0.97]`}
+    >
+      {icon}
+      <span className="text-[12px] font-extrabold">{label}</span>
+    </button>
+  );
+}
+
+// ──────────────────────────────────────────────────
+// 평가 안내 다이얼로그
+// ──────────────────────────────────────────────────
+function RatingInfoDialog({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-5">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm bg-white rounded-3xl p-6 space-y-4"
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+          <h3 className="text-base font-extrabold text-gray-900">
+            문제 평가 안내
+          </h3>
+        </div>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          여러분의 평가로 AI 문제 품질이 개선됩니다.
+        </p>
+        <div className="space-y-2.5">
+          <InfoRow
+            color="text-green-600"
+            title="좋음"
+            desc="실전 시험에 나올 법한 좋은 문제"
+          />
+          <InfoRow
+            color="text-orange-600"
+            title="나쁨"
+            desc="너무 쉽거나 애매한 문제"
+          />
+          <InfoRow
+            color="text-red-500"
+            title="오류"
+            desc="정답이 틀리거나 문제에 오류가 있음"
+          />
+        </div>
+        <button
+          onClick={onClose}
+          className="w-full py-3 bg-gray-100 active:bg-gray-200 text-gray-700 font-bold rounded-xl"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({
+  color,
+  title,
+  desc,
+}: {
+  color: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className={`text-sm font-extrabold ${color} shrink-0 w-12`}>
+        {title}
+      </span>
+      <span className="text-sm text-gray-600 leading-snug">{desc}</span>
     </div>
   );
 }
@@ -732,9 +986,13 @@ function OmrSheet({
 function ExitDialog({
   onCancel,
   onConfirm,
+  isInfinite,
+  infiniteScore,
 }: {
   onCancel: () => void;
   onConfirm: () => void;
+  isInfinite?: boolean;
+  infiniteScore?: number;
 }) {
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -758,12 +1016,28 @@ function ExitDialog({
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </div>
-          <h3 className="text-lg font-extrabold text-gray-900">시험 종료</h3>
+          <h3 className="text-lg font-extrabold text-gray-900">
+            {isInfinite ? "무한 퀴즈 종료" : "시험 종료"}
+          </h3>
         </div>
         <p className="text-sm text-gray-600 leading-relaxed">
-          정말 시험을 중단하고 나가시겠습니까?
-          <br />
-          지금까지 푼 기록은 모두 초기화됩니다.
+          {isInfinite ? (
+            <>
+              무한 퀴즈를 중단하시겠습니까?
+              <br />
+              현재 기록:{" "}
+              <span className="text-amber-600 font-extrabold">
+                연속 {infiniteScore ?? 0}문제 정답
+              </span>{" "}
+              (점수 등록 안 됨)
+            </>
+          ) : (
+            <>
+              정말 시험을 중단하고 나가시겠습니까?
+              <br />
+              지금까지 푼 기록은 모두 초기화됩니다.
+            </>
+          )}
         </p>
         <div className="flex gap-2 pt-1">
           <button
