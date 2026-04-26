@@ -30,6 +30,7 @@ export default function BottomNav() {
       name: "앱",
       path: "/apps",
       icon: (active: boolean) => (
+        // 4개 그리드 — 앱 보관함 (APK)
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="3" width="7" height="7" rx="1.5" />
           <rect x="14" y="3" width="7" height="7" rx="1.5" />
@@ -39,15 +40,15 @@ export default function BottomNav() {
       ),
     },
     {
-      name: "CBT",
-      path: "/cbt",
+      name: "앱",
+      path: "/web",
       badge: "WEB",
       icon: (active: boolean) => (
-        // 시험지/체크리스트 라인 아이콘
+        // 글로브 — 웹에서 실행 의미
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <path d="M9 13l2 2 4-4" />
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
       ),
     },
@@ -75,7 +76,7 @@ export default function BottomNav() {
 
           return (
             <Link
-              key={item.name}
+              key={item.path}
               href={item.path as any}
               className="flex flex-col items-center justify-center w-full h-full gap-0.5 active:scale-95 transition-transform relative"
             >
