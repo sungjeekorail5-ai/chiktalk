@@ -6,33 +6,74 @@ import { usePathname } from "next/navigation";
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // 💡 메뉴 리스트 (원하시는 메뉴로 자유롭게 수정 가능!)
   const navItems = [
-    { name: "홈", path: "/", icon: "🏠" },
-    { name: "게시판", path: "/board", icon: "💬" },
-    { name: "앱 보관함", path: "/apps", icon: "📦" },
-    { name: "내 정보", path: "/profile", icon: "👤" },
+    {
+      name: "홈",
+      path: "/",
+      icon: (active: boolean) => (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 11l9-8 9 8" />
+          <path d="M5 10v10h14V10" />
+        </svg>
+      ),
+    },
+    {
+      name: "게시판",
+      path: "/board",
+      icon: (active: boolean) => (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      ),
+    },
+    {
+      name: "앱 보관함",
+      path: "/apps",
+      icon: (active: boolean) => (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      ),
+    },
+    {
+      name: "내 정보",
+      path: "/profile",
+      icon: (active: boolean) => (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.4 : 2} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21v-1a8 8 0 0 1 16 0v1" />
+        </svg>
+      ),
+    },
   ];
 
   return (
-    // md:hidden 을 줘서 PC 화면에서는 숨기고, 모바일에서만 보이게 합니다.
-    // pb-[env(safe-area-inset-bottom)] 로 아이폰 하단 홈 바 영역을 보호합니다.
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] md:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 md:hidden pb-[env(safe-area-inset-bottom)]"
+    >
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
-          // 현재 페이지인지 확인해서 활성화 색상 적용
-          const isActive = pathname === item.path || (item.path !== "/" && pathname.startsWith(item.path));
+          const isActive =
+            pathname === item.path ||
+            (item.path !== "/" && pathname.startsWith(item.path));
 
           return (
-            <Link 
-              key={item.name} 
-              href={item.path as any} 
-              className="flex flex-col items-center justify-center w-full h-full gap-1 active:scale-95 transition-transform"
+            <Link
+              key={item.name}
+              href={item.path as any}
+              className="flex flex-col items-center justify-center w-full h-full gap-0.5 active:scale-95 transition-transform"
             >
-              <span className={`text-xl transition-colors ${isActive ? "grayscale-0" : "grayscale opacity-40"}`}>
-                {item.icon}
+              <span className={isActive ? "text-blue-600" : "text-gray-300"}>
+                {item.icon(isActive)}
               </span>
-              <span className={`text-[10px] font-black transition-colors ${isActive ? "text-blue-600" : "text-gray-400"}`}>
+              <span
+                className={`text-[10px] tracking-tight ${
+                  isActive ? "text-blue-600 font-extrabold" : "text-gray-400 font-bold"
+                }`}
+              >
                 {item.name}
               </span>
             </Link>

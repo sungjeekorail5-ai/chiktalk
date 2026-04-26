@@ -1,51 +1,61 @@
 "use client";
 
 import { useAuth } from "@/lib/AuthContext";
-import Link from "next/link"; 
+import Link from "next/link";
 
-export default function NavbarClient({ isLoggedIn, isRealUser }: { isLoggedIn: boolean, isRealUser: boolean }) {
+export default function NavbarClient({
+  isLoggedIn,
+  isRealUser,
+}: {
+  isLoggedIn: boolean;
+  isRealUser: boolean;
+}) {
   const { user, logout } = useAuth();
 
-  // 1️⃣ 로그아웃 상태일 때
+  // 1) 로그아웃 상태
   if (!isLoggedIn) {
     return (
-      <a href="/login" className="bg-blue-600 text-white px-3 sm:px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">
-        <span className="sm:hidden">GO</span>
-        <span className="hidden sm:inline">로그인</span>
+      <a
+        href="/login"
+        className="bg-gray-900 hover:bg-blue-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm font-bold transition-colors whitespace-nowrap"
+      >
+        로그인
       </a>
     );
   }
 
-  // 2️⃣ 로그인 상태일 때
+  // 2) 로그인 상태
   return (
-    <div className="flex items-center gap-1.5 sm:gap-3">
-      {/* 💡 닉네임 표시부: 닉네임이 있으면 띄워줍니다 */}
+    <div className="flex items-center gap-2 md:gap-3">
       {user && (
-        <span className="hidden lg:inline text-gray-900 font-black mr-1 animate-fade-in">
-          🚄 {user.nickname}님
+        <span className="hidden lg:inline text-gray-900 font-bold text-sm">
+          {user.nickname}님
         </span>
       )}
 
-      <span className={`text-[7px] sm:text-[10px] px-1 py-0.5 rounded font-black border flex-shrink-0 ${
-        isRealUser ? "bg-blue-100 text-blue-600 border-blue-200" : "bg-amber-100 text-amber-600 border-amber-200"
-      }`}>
-        {isRealUser ? 'STAFF' : 'GUEST'}
-      </span>
-      
-      {/* 🚀 [신규 추가] PC 웹용 '내 정보' 버튼 */}
-      <Link 
-        href={"/profile" as any}
-        className="hidden md:flex items-center justify-center bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all whitespace-nowrap font-bold text-sm shadow-sm"
+      <span
+        className={`text-[10px] md:text-[11px] px-1.5 py-0.5 rounded-md font-extrabold tracking-wide ${
+          isRealUser
+            ? "bg-blue-50 text-blue-600"
+            : "bg-amber-50 text-amber-600"
+        }`}
       >
-        내 정보 🎫
+        {isRealUser ? "STAFF" : "GUEST"}
+      </span>
+
+      {/* 내 정보 (PC 전용) */}
+      <Link
+        href={"/profile" as any}
+        className="hidden md:flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-xl transition-colors whitespace-nowrap font-bold text-sm"
+      >
+        내 정보
       </Link>
 
-      <button 
+      <button
         onClick={logout}
-        className="bg-gray-100 text-gray-600 px-2 sm:px-4 py-1.5 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap font-bold"
+        className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 md:px-4 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-colors whitespace-nowrap"
       >
-        <span className="sm:hidden">OFF</span>
-        <span className="hidden sm:inline">로그아웃</span>
+        로그아웃
       </button>
     </div>
   );
