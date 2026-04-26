@@ -94,7 +94,8 @@ export default function CbtRankingPage() {
             <span className="text-amber-600 font-bold">
               코레일CBT 앱 + 칙칙톡톡 웹 통합 랭킹.
             </span>
-            <span className="inline-block ml-1 text-[9px] font-extrabold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none align-middle">
+            <br />
+            <span className="inline-block text-[9px] font-extrabold bg-blue-600 text-white px-1.5 py-0.5 rounded leading-none align-middle">
               WEB
             </span>
             <span className="text-gray-500"> 뱃지가 칙칙톡톡 웹 등록 점수예요.</span>

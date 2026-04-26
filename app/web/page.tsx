@@ -108,7 +108,7 @@ export default async function WebAppsPage() {
           <SectionLabel>곧 추가될 앱</SectionLabel>
           <div className="mt-3 bg-gray-50 rounded-2xl p-5 text-center">
             <p className="text-sm text-gray-500 font-semibold leading-relaxed">
-              다른 코레일 사내 앱들도
+              다른 앱들도
               <br />
               순차적으로 웹 버전이 추가될 예정이에요.
             </p>
@@ -124,9 +124,9 @@ export default async function WebAppsPage() {
             왜 웹으로도 만들었나요?
           </p>
           <p className="text-xs text-blue-700 leading-relaxed">
-            안드로이드 사용자는 <Link href="/apps" className="underline font-bold">앱 보관함</Link>
-            에서 APK를 받을 수 있지만, iOS는 받을 방법이 없어요.
-            그래서 동일한 기능을 웹에서도 쓸 수 있도록 옮겼습니다.
+            iOS(아이폰) 사용자의 앱 제작 요청이 있었습니다.
+            안드로이드와 다르게 아이폰의 경우 앱 배포에 제약이 많아,
+            동일한 기능을 웹에서 사용할 수 있도록 옮겼습니다.
           </p>
         </div>
       </div>
