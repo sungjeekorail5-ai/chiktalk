@@ -31,27 +31,72 @@ export default function QuizClient() {
 
   // 데이터 로드 + 출제
   useEffect(() => {
-    if (mode !== "exam") {
-      setIsLoading(false);
-      return;
-    }
-
     (async () => {
       try {
-        const { questions: all } = await loadCbtData();
-        const selection: ExamSelection = {
-          years: yearsParam.split(",").filter(Boolean),
-          major,
-          subject,
-        };
-        const picked = pickExamQuestions(all, selection);
-        if (picked.length === 0) {
-          alert("선택한 조건의 기출문제가 없습니다.");
-          router.replace("/web/cbt/select");
+        if (mode === "exam") {
+          const { questions: all } = await loadCbtData();
+          const selection: ExamSelection = {
+            years: yearsParam.split(",").filter(Boolean),
+            major,
+            subject,
+          };
+          const picked = pickExamQuestions(all, selection);
+          if (picked.length === 0) {
+            alert("선택한 조건의 기출문제가 없습니다.");
+            router.replace("/web/cbt/select");
+            return;
+          }
+          setQuestions(picked);
+          setUserAnswers(new Array(picked.length).fill(-1));
+          setIsLoading(false);
           return;
         }
-        setQuestions(picked);
-        setUserAnswers(new Array(picked.length).fill(-1));
+
+        if (mode === "wrong") {
+          // 오답노트 다시 풀기 — Firestore에 저장된 오답을 그대로 출제
+          const res = await fetch("/api/cbt/wrong-answers");
+          if (!res.ok) throw new Error("오답노트를 불러오지 못했습니다.");
+          const { items, loggedIn } = await res.json();
+          if (!loggedIn) {
+            alert("오답노트는 로그인 후 이용할 수 있어요.");
+            router.replace("/login");
+            return;
+          }
+          if (!items || items.length === 0) {
+            alert("저장된 오답이 없어요.");
+            router.replace("/web/cbt/wrong");
+            return;
+          }
+          // 저장된 데이터 그대로 사용 (image → imageUrl 변환만)
+          const picked: Question[] = items.map((it: any) => ({
+            year: it.year ?? "",
+            round: it.round ?? "",
+            major: it.major ?? "",
+            type: it.type ?? "",
+            subject: it.subject ?? "",
+            no: it.no ?? 0,
+            question: it.question ?? "",
+            options: Array.isArray(it.options) ? it.options : [],
+            answer: it.answer ?? 0,
+            image: it.image ?? undefined,
+            source: it.source ?? undefined,
+            category: it.category ?? undefined,
+            explanation: it.explanation ?? undefined,
+            id: it.id,
+            isAI: !!it.isAI,
+            imageUrl: it.image
+              ? it.image.startsWith("assets/images/")
+                ? "/cbt/" + it.image.substring("assets/".length)
+                : it.image
+              : undefined,
+          }));
+          setQuestions(picked);
+          setUserAnswers(new Array(picked.length).fill(-1));
+          setIsLoading(false);
+          return;
+        }
+
+        // 그 외 모드 = placeholder
         setIsLoading(false);
       } catch (e) {
         console.error(e);
@@ -86,7 +131,7 @@ export default function QuizClient() {
     );
   }
 
-  if (mode !== "exam") {
+  if (mode !== "exam" && mode !== "wrong") {
     return (
       <div className="max-w-md mx-auto px-5 py-12 text-center space-y-4">
         <div className="text-4xl">🚧</div>
@@ -128,7 +173,7 @@ export default function QuizClient() {
     }
   };
 
-  const submit = () => {
+  const submit = async () => {
     let correct = 0;
     const wrongList: QuizResult["wrongList"] = [];
     for (let i = 0; i < questions.length; i++) {
@@ -140,7 +185,7 @@ export default function QuizClient() {
     }
 
     const result: QuizResult = {
-      mode: "exam",
+      mode: mode as any,
       total: questions.length,
       correct,
       score: correct,
@@ -153,6 +198,21 @@ export default function QuizClient() {
     try {
       sessionStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(result));
     } catch {}
+
+    // 오답노트 다시풀기 모드: 맞춘 문제는 자동으로 오답에서 삭제
+    if (mode === "wrong") {
+      const correctIds = questions
+        .filter((q, i) => isCorrect(userAnswers[i], q.answer))
+        .map((q) => q.id);
+      if (correctIds.length > 0) {
+        try {
+          await fetch(
+            `/api/cbt/wrong-answers?ids=${encodeURIComponent(correctIds.join(","))}`,
+            { method: "DELETE" }
+          );
+        } catch {}
+      }
+    }
 
     router.push("/web/cbt/result" as any);
   };

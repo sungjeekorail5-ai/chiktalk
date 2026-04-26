@@ -15,6 +15,7 @@ export default function CbtResultPage() {
   const [result, setResult] = useState<QuizResult | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [filter, setFilter] = useState<FilterMode>("wrong");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "guest" | "error">("idle");
 
   useEffect(() => {
     try {
@@ -23,6 +24,45 @@ export default function CbtResultPage() {
     } catch {}
     setLoaded(true);
   }, []);
+
+  // 오답 자동 저장 (기출 모드만 — 다시풀기 모드는 이미 풀 때 삭제 처리됨)
+  useEffect(() => {
+    if (!result) return;
+    if (result.mode !== "exam") return;
+    if (result.wrongList.length === 0) return;
+
+    const items = result.wrongList.map(({ question: q, selectedIndex }) => ({
+      id: q.id,
+      year: q.year,
+      round: q.round,
+      major: q.major,
+      type: q.type,
+      subject: q.subject,
+      no: q.no,
+      question: q.question,
+      options: q.options,
+      answer: q.answer,
+      image: q.image ?? null,
+      source: q.source ?? null,
+      category: q.category ?? null,
+      explanation: q.explanation ?? null,
+      isAI: q.isAI,
+      userAnswer: selectedIndex + 1, // 1-based
+    }));
+
+    setSaveStatus("saving");
+    fetch("/api/cbt/wrong-answers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    })
+      .then((res) => {
+        if (res.status === 401) setSaveStatus("guest");
+        else if (res.ok) setSaveStatus("saved");
+        else setSaveStatus("error");
+      })
+      .catch(() => setSaveStatus("error"));
+  }, [result]);
 
   // 분류된 문제 목록
   const reviewItems = useMemo(() => {
@@ -192,19 +232,75 @@ export default function CbtResultPage() {
           </Link>
         </div>
 
-        {/* ──────────── 6단계 안내 ──────────── */}
-        {wrongCount > 0 && (
-          <div className="bg-amber-50 rounded-2xl p-4">
-            <p className="text-[13px] font-bold text-amber-800 mb-1">
-              곧 추가될 기능
-            </p>
-            <p className="text-xs text-amber-700 leading-relaxed">
-              로그인하면 틀린 문제가 자동으로 오답노트에 저장되고, 나중에 다시 풀어볼 수 있게 됩니다.
-              (다음 단계에서 구현 예정)
-            </p>
-          </div>
+        {/* ──────────── 오답노트 저장 상태 안내 ──────────── */}
+        {wrongCount > 0 && result.mode === "exam" && (
+          <SaveStatusBanner status={saveStatus} />
         )}
       </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────
+// 오답 저장 상태 배너
+// ──────────────────────────────────────────────────
+function SaveStatusBanner({
+  status,
+}: {
+  status: "idle" | "saving" | "saved" | "guest" | "error";
+}) {
+  if (status === "idle" || status === "saving") {
+    return (
+      <div className="bg-gray-50 rounded-2xl p-4 text-xs font-bold text-gray-500 text-center">
+        오답노트에 저장 중...
+      </div>
+    );
+  }
+  if (status === "saved") {
+    return (
+      <Link
+        href="/web/cbt/wrong"
+        className="block bg-green-50 rounded-2xl p-4 active:bg-green-100 transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-[13px] font-extrabold text-green-800">
+              오답이 자동 저장되었어요
+            </p>
+            <p className="text-xs text-green-600">
+              오답노트에서 다시 풀어볼 수 있어요 →
+            </p>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+  if (status === "guest") {
+    return (
+      <div className="bg-amber-50 rounded-2xl p-4">
+        <p className="text-[13px] font-bold text-amber-800 mb-1">
+          로그인하면 자동 저장돼요
+        </p>
+        <p className="text-xs text-amber-700 leading-relaxed mb-3">
+          STAFF 로그인 시 틀린 문제가 자동으로 오답노트에 저장됩니다.
+        </p>
+        <Link
+          href="/login"
+          className="inline-block bg-amber-600 active:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl text-xs"
+        >
+          로그인하러 가기
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-red-50 rounded-2xl p-4 text-xs font-bold text-red-700 text-center">
+      오답노트 저장에 실패했어요. 잠시 후 다시 시도해주세요.
     </div>
   );
 }
