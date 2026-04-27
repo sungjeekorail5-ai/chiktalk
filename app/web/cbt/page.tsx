@@ -125,7 +125,7 @@ export default async function CbtHomePage() {
             수록 데이터
           </p>
           <p className="text-xs text-gray-500 leading-relaxed">
-            기출문제 5,979문항 (2022~2025) · AI 사규문제 950문항 · 도식 이미지 356장
+            기출문제 5,979문항 (2022~2025) · AI 사규문제 2,960문항 · 도식 이미지 356장
           </p>
         </div>
 

@@ -20,7 +20,7 @@ const WEB_APPS: WebApp[] = [
     name: "코레일 CBT",
     tagline: "기출문제 + AI 사규문제",
     description:
-      "5,979개 기출문제와 950개 AI 사규문제를 풀고 채점받을 수 있어요.",
+      "5,979개 기출문제와 2,960개 AI 사규문제를 풀고 채점받을 수 있어요.",
     href: "/web/cbt",
     available: true,
     iconUrl: "/web/icons/cbt.png",
