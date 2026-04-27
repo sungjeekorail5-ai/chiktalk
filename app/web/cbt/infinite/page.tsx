@@ -18,37 +18,8 @@ const MAJORS = [
   "신호제어",
 ] as const;
 
-// 사무영업 카테고리 → 사규(source) 목록
-const CATEGORY_SOURCES: Record<string, string[]> = {
-  공통사항: [
-    "전체",
-    "철도안전보건 관리 규정",
-    "산업안전보건 관리 세칙",
-    "재해업무 처리 규정",
-    "비상대응 시행세칙",
-    "철도안전관리 시행세칙",
-    "철도안전점검 및 심사평가시행세칙",
-    "소방안전관리 시행세칙",
-    "철도사고조사 및 피해구상 세칙",
-  ],
-  "여객·화물관계사규": [
-    "전체",
-    "여객운송약관",
-    "광역철도 여객운송약관",
-    "철도화물운송약관",
-    "화물운송세칙",
-    "화물수송 내규",
-    "영업사고처리세칙",
-  ],
-  운전관계사규: [
-    "전체",
-    "운전취급규정",
-    "운전취급 내규 일부개정안 전문",
-    "운전보안장치취급 내규 개정 전문",
-    "운전장표취급 내규 개정 전문",
-    "열차운행선로 지장작업 업무세칙",
-  ],
-};
+// 사규 목록은 더 이상 하드코딩하지 않음 — AI 데이터에서 동적으로 추출.
+// (새 사규/카테고리가 데이터에 추가되면 자동으로 위저드에도 반영됨)
 
 export default function CbtInfinitePage() {
   const router = useRouter();
@@ -71,20 +42,31 @@ export default function CbtInfinitePage() {
     })();
   }, []);
 
-  // ─── 카테고리별 문제 수 (헤드업)
+  // ─── 카테고리별 문제 수 + 사규별 문제 수 (데이터에서 동적 집계)
   const counts = useMemo(() => {
-    const byCategory = { 공통사항: 0, "여객·화물관계사규": 0, 운전관계사규: 0 };
+    const byCategory: Record<string, number> = {};
     const bySource: Record<string, number> = {};
+    // 카테고리 → 그 안의 사규 목록 (자동 그룹핑)
+    const sourcesByCategory: Record<string, string[]> = {};
+
     for (const q of aiQuestions) {
-      if (q.category && byCategory[q.category as keyof typeof byCategory] !== undefined) {
-        byCategory[q.category as keyof typeof byCategory]++;
+      if (q.category) {
+        byCategory[q.category] = (byCategory[q.category] ?? 0) + 1;
+        if (q.source) {
+          if (!sourcesByCategory[q.category]) sourcesByCategory[q.category] = [];
+          if (!sourcesByCategory[q.category].includes(q.source)) {
+            sourcesByCategory[q.category].push(q.source);
+          }
+        }
       }
-      if (q.source) bySource[q.source] = (bySource[q.source] || 0) + 1;
+      if (q.source) bySource[q.source] = (bySource[q.source] ?? 0) + 1;
     }
-    return { byCategory, bySource, total: aiQuestions.length };
+    // 사규 정렬 (가나다순)
+    Object.values(sourcesByCategory).forEach((arr) => arr.sort());
+    return { byCategory, bySource, sourcesByCategory, total: aiQuestions.length };
   }, [aiQuestions]);
 
-  // 직렬별 표시할 카테고리
+  // 직렬별 표시할 카테고리 (앱과 동일 매핑)
   const availableCategoriesForMajor = useMemo(() => {
     if (major === "사무영업") {
       return ["공통사항", "여객·화물관계사규", "운전관계사규"];
@@ -92,18 +74,23 @@ export default function CbtInfinitePage() {
     if (major === "운전") {
       return ["공통사항", "운전관계사규"];
     }
-    // 그 외: 공통사항만
+    if (major === "차량") {
+      return ["공통사항", "차량관계사규", "철도차량공학"];
+    }
+    // 그 외 직렬: 공통사항만
     return ["공통사항"];
   }, [major]);
 
-  // 운전 직렬은 운전관계사규 → 운전취급규정만
+  // 사규 목록은 데이터에서 동적으로 추출. "전체"는 항상 맨 앞에 추가.
+  // 운전 직렬은 예외적으로 운전관계사규 → 운전취급규정만 노출
   const availableSources = useMemo(() => {
     if (!category) return [];
     if (major === "운전" && category === "운전관계사규") {
       return ["운전취급규정"];
     }
-    return CATEGORY_SOURCES[category] ?? ["전체"];
-  }, [major, category]);
+    const list = counts.sourcesByCategory[category] ?? [];
+    return ["전체", ...list];
+  }, [major, category, counts.sourcesByCategory]);
 
   // 시작 (통합문제 또는 일반)
   function start(opts: { category: string; source: string }) {
@@ -242,7 +229,7 @@ export default function CbtInfinitePage() {
             {/* 카테고리 카드 */}
             {availableCategoriesForMajor.map((cat) => {
               const count =
-                counts.byCategory[cat as keyof typeof counts.byCategory] ?? 0;
+                counts.byCategory[cat] ?? 0;
               return (
                 <button
                   key={cat}
@@ -303,9 +290,7 @@ export default function CbtInfinitePage() {
               {availableSources.map((src) => {
                 const count =
                   src === "전체"
-                    ? counts.byCategory[
-                        category as keyof typeof counts.byCategory
-                      ] ?? 0
+                    ? counts.byCategory[category] ?? 0
                     : counts.bySource[src] ?? 0;
                 const disabled = count === 0;
                 return (
