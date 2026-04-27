@@ -1,476 +1,344 @@
-"use client";
+// 🚆 칙칙톡톡 랜딩 v3 — Railroad.ai 톤 헤로
+//
+// 객실 이미지의 검정 창문 영역에 풍경을 겹쳐
+// 좌→우 무한 스크롤 + 미세한 흔들림으로
+// 실제로 KTX를 타고 가는 듯한 시네마틱 헤로.
+//
+// 이미지:
+//   /landing/train-interior.png  — 객실 (창문은 검정으로 비어있음)
+//   /landing/landscape.png       — 한국 봄 풍경 (벚꽃·논·산·노을)
 
 import Link from "next/link";
 
-/**
- * 사이버펑크 / 미래 코레일 랜딩 시안 v2
- * URL: /landing
- *
- * 거대 타이포 + SVG 미래 KTX + 강한 모션
- */
-export default function LandingPage() {
+export const metadata = {
+  title: "칙칙톡톡 — Next Station, Future.",
+  description: "코레일 스태프를 위한 디지털 정거장.",
+};
+
+export default function LandingV3Page() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black text-white">
-      {/* ─────────── 배경 ─────────── */}
-      <BackgroundFx />
+    <div className="bg-[#050609] text-white min-h-screen overflow-hidden">
+      {/* ──────────────── 헤더 ──────────────── */}
+      <header className="absolute top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <p className="text-[10px] md:text-[11px] font-mono font-bold tracking-[0.3em] text-white/70">
+            CHIKTALK / EST. 2026
+          </p>
+        </div>
+        <p className="hidden md:block text-[10px] font-mono tracking-[0.25em] text-white/50">
+          KORAIL STAFF · ONLINE
+        </p>
+      </header>
 
-      {/* ─────────── 콘텐츠 ─────────── */}
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {/* 상단 미니 헤더 */}
-        <header className="px-6 md:px-12 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-gradient-to-br from-cyan-300 to-blue-500 shadow-[0_0_15px_rgba(34,211,238,0.7)]" />
-            <span className="text-[11px] font-extrabold tracking-[0.3em] text-white/80">
-              CHIKTALK · KORAIL
-            </span>
+      {/* ──────────────── 헤로 (풀스크린) ──────────────── */}
+      <section className="relative h-[100svh] min-h-[600px] w-full overflow-hidden">
+        {/* 객실 + 풍경 (한 묶음으로 흔들림) */}
+        <div className="absolute inset-0 hero-shake">
+          {/* 객실 (베이스) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/landing/train-interior.png"
+            alt="KTX cabin"
+            className="absolute inset-0 w-full h-full object-cover"
+            draggable={false}
+          />
+
+          {/* 풍경 클립 — 객실의 검정 창문 영역에만 보이게 */}
+          <div
+            className="absolute overflow-hidden"
+            style={{
+              // 창문 좌표 (객실 이미지 비율 기준 추정 — 실측 후 미세조정 가능)
+              top: "5%",
+              left: "12%",
+              right: "10%",
+              bottom: "18%",
+              borderRadius: "24px",
+            }}
+          >
+            {/* 좌→우 무한 스크롤 트랙 (3장: 정상 → 거울 → 정상) */}
+            <div className="landscape-track absolute top-0 left-0 h-full flex">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/landing/landscape.png"
+                alt=""
+                className="h-full w-auto object-cover shrink-0 select-none"
+                draggable={false}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/landing/landscape.png"
+                alt=""
+                className="h-full w-auto object-cover shrink-0 select-none"
+                draggable={false}
+                style={{ transform: "scaleX(-1)" }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/landing/landscape.png"
+                alt=""
+                className="h-full w-auto object-cover shrink-0 select-none"
+                draggable={false}
+              />
+            </div>
+
+            {/* 창문 안쪽 글로우 (분위기) */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.35) 100%)",
+              }}
+            />
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" />
-            <span className="text-[10px] font-extrabold tracking-widest text-cyan-300">
-              ONLINE
-            </span>
-          </div>
-        </header>
+        </div>
 
-        {/* 히어로 — 좌측 카피 + 우측 KTX */}
-        <main className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-4 px-6 md:px-12 pb-12">
-          {/* 좌측: 거대 타이포 */}
-          <div className="md:col-span-7 flex flex-col justify-center pt-4 md:pt-0">
-            <p className="text-[11px] font-extrabold tracking-[0.4em] text-cyan-300 mb-4 md:mb-6">
-              FOR KORAIL EMPLOYEES · 2026
-            </p>
+        {/* 헤로 콘텐츠 (흔들리지 않음 — 가독성) */}
+        <div className="relative z-30 h-full flex flex-col justify-end px-6 md:px-12 pb-14 md:pb-20">
+          <div className="max-w-6xl">
+            {/* 메타 라벨 */}
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
+              <span className="inline-block w-8 h-px bg-white/60" />
+              <p className="text-[10px] md:text-[11px] font-mono tracking-[0.3em] text-white/70">
+                LINE 01 · KORAIL DIGITAL STATION
+              </p>
+            </div>
 
-            <h1 className="font-black tracking-tight leading-[0.85]">
-              <span className="block text-[14vw] md:text-[8.5vw] bg-gradient-to-br from-white via-cyan-100 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.3)]">
-                NEXT
+            {/* 거대 타이포 */}
+            <h1 className="font-black tracking-tight leading-[0.88]">
+              <span className="block text-[14vw] md:text-[10vw] lg:text-[8.5vw] bg-gradient-to-b from-white via-white to-white/60 bg-clip-text text-transparent">
+                NEXT STATION,
               </span>
-              <span className="block text-[14vw] md:text-[8.5vw] bg-gradient-to-br from-cyan-200 via-cyan-300 to-cyan-500 bg-clip-text text-transparent">
-                STATION:
-              </span>
-              <span className="block text-[14vw] md:text-[8.5vw] italic text-white drop-shadow-[0_0_25px_rgba(34,211,238,0.5)]">
-                FUTURE.
+              <span className="block text-[14vw] md:text-[10vw] lg:text-[8.5vw] italic font-light text-white/95">
+                future.
               </span>
             </h1>
 
-            <p className="mt-5 md:mt-6 text-base md:text-lg text-white/60 max-w-xl leading-relaxed">
-              다음 정류장은, 미래.
-              <br className="hidden md:block" />
-              <span className="text-cyan-200/80">
-                철도인의 일상을 잇는 한 줄, 새 궤도.
+            {/* 서브 카피 */}
+            <p className="mt-6 md:mt-8 max-w-md md:max-w-lg text-[15px] md:text-[17px] leading-relaxed text-white/75 font-medium">
+              코레일 스태프를 위한 디지털 정거장.
+              <br />
+              <span className="text-white/55">
+                Built for those who keep Korea moving.
               </span>
             </p>
 
             {/* CTA */}
-            <div className="mt-7 md:mt-10 flex flex-wrap gap-3">
+            <div className="mt-8 md:mt-10 flex flex-wrap items-center gap-3 md:gap-4">
               <Link
-                href="/board"
-                className="group relative inline-flex items-center gap-2 px-7 py-3.5 bg-cyan-300 text-black font-extrabold tracking-wider rounded-full overflow-hidden active:scale-95 transition-transform"
+                href={"/web" as any}
+                className="group inline-flex items-center gap-3 bg-white text-black px-6 md:px-7 py-3.5 md:py-4 rounded-full text-sm md:text-base font-extrabold tracking-tight active:scale-[0.97] transition-transform"
               >
-                <span className="relative z-10">BOARDING →</span>
-                <span className="absolute inset-0 bg-gradient-to-r from-cyan-300 via-white to-cyan-300 [background-size:200%_100%] [animation:shimmer_3s_linear_infinite] opacity-0 group-hover:opacity-60 transition-opacity" />
+                <span>BOARDING</span>
+                <span className="inline-block transition-transform group-hover:translate-x-1">
+                  →
+                </span>
               </Link>
               <Link
-                href="/web"
-                className="inline-flex items-center gap-1.5 px-7 py-3.5 border border-cyan-300/40 text-cyan-100 font-bold tracking-wider rounded-full hover:bg-cyan-300/5 hover:border-cyan-300 active:scale-95 transition-all"
+                href={"/board" as any}
+                className="inline-flex items-center gap-2 px-5 md:px-6 py-3.5 md:py-4 rounded-full text-sm md:text-base font-bold text-white/90 border border-white/25 hover:bg-white/10 transition-colors"
               >
+                <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
                 EXPLORE
               </Link>
             </div>
+          </div>
+        </div>
 
-            {/* 작은 라이브 인디케이터 */}
-            <div className="mt-8 md:mt-12 flex items-center gap-6 text-[10px] font-extrabold tracking-[0.2em] text-white/40">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1 h-1 bg-cyan-300 rounded-full animate-pulse" />
-                NETWORK ACTIVE
-              </span>
-              <span>5,979 · EXAM</span>
-              <span>2,960 · AI</span>
-              <span className="hidden md:inline">356 · IMAGES</span>
+        {/* 우상단 메타 위젯 */}
+        <div className="hidden md:block absolute top-20 right-10 z-30">
+          <div className="text-right space-y-1.5">
+            <p className="text-[10px] font-mono tracking-[0.25em] text-white/50">
+              EXAM · AI · IMAGES
+            </p>
+            <div className="flex items-center justify-end gap-3 text-white">
+              <Stat n="5,979" />
+              <span className="text-white/30 font-mono">/</span>
+              <Stat n="2,960" />
+              <span className="text-white/30 font-mono">/</span>
+              <Stat n="356" />
             </div>
           </div>
+        </div>
 
-          {/* 우측: 미래 KTX */}
-          <div className="md:col-span-5 relative flex items-center justify-center min-h-[280px] md:min-h-[500px]">
-            <FutureKtx />
+        {/* 우하단 스크롤 인디케이터 */}
+        <div className="hidden md:flex absolute bottom-8 right-10 z-30 items-center gap-2 text-white/50">
+          <p className="text-[10px] font-mono tracking-[0.3em]">SCROLL</p>
+          <div className="w-px h-8 bg-gradient-to-b from-white/40 to-transparent" />
+        </div>
+      </section>
+
+      {/* ──────────────── 모듈 섹션 ──────────────── */}
+      <section className="relative px-6 md:px-12 py-20 md:py-32">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-8">
+            <span className="text-[10px] font-mono tracking-[0.3em] text-white/40">
+              02 · MODULES
+            </span>
+            <span className="flex-1 h-px bg-white/10" />
           </div>
-        </main>
 
-        {/* 하단 모듈 진입 */}
-        <footer className="px-6 md:px-12 pb-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-            <ModuleLink href="/board" code="01" title="BOARD" sub="게시판" />
-            <ModuleLink
-              href="/web/cbt"
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[0.95] mb-3">
+            모든 도구를
+            <br />
+            <span className="italic font-light text-white/60">한 정거장에서.</span>
+          </h2>
+          <p className="text-white/50 text-sm md:text-base font-medium mb-12 md:mb-16 max-w-md">
+            게시판부터 시험·급여까지. 코레일 스태프가 매일 쓰는 것들.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+            <ModuleCard
+              code="01"
+              title="BOARD"
+              kor="게시판"
+              desc="STAFF 인증 후 자유롭게 글을 남기고 의견을 모을 수 있어요."
+              href="/board"
+            />
+            <ModuleCard
               code="02"
               title="CBT"
-              sub="기출문제"
+              kor="기출 + AI 사규문제"
+              desc="기출 5,979 + AI 사규 2,960 + 도식 356장. 무한 퀴즈와 랭킹까지."
+              href="/web/cbt"
               accent
             />
-            <ModuleLink
-              href="/web/payroll"
+            <ModuleCard
               code="03"
               title="PAYROLL"
-              sub="급여계산기"
-              accent
+              kor="급여 계산기"
+              desc="호봉제·연봉제 모두 지원. 4단계 위저드로 통상임금 계산."
+              href="/web/payroll"
             />
-            <ModuleLink href="/apps" code="04" title="APK" sub="앱 보관함" />
+            <ModuleCard
+              code="04"
+              title="APK"
+              kor="안드로이드 앱"
+              desc="등용팀장 시리즈 앱을 직접 받을 수 있어요. iOS는 웹으로."
+              href="/apk"
+            />
           </div>
-          <p className="mt-6 text-center text-[10px] font-extrabold tracking-[0.3em] text-white/20">
-            UNOFFICIAL · KORAIL EMPLOYEES INTERNAL TOOLKIT · © 2026
+        </div>
+      </section>
+
+      {/* ──────────────── 푸터 ──────────────── */}
+      <footer className="px-6 md:px-12 py-10 border-t border-white/10">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <p className="text-[11px] font-mono tracking-[0.25em] text-white/40">
+            CHIKTALK · KORAIL STAFF ONLY · 2026
           </p>
-        </footer>
-      </div>
-    </div>
-  );
-}
+          <p className="text-[11px] font-mono tracking-[0.25em] text-white/30">
+            ALL STATIONS REACHED.
+          </p>
+        </div>
+      </footer>
 
-// ────────────────────────────────────────────────────────────────
-// 미래 KTX SVG (측면 각도 + 모션 + 글로우)
-// ────────────────────────────────────────────────────────────────
-function FutureKtx() {
-  return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      {/* 글로우 후광 */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,_rgba(34,211,238,0.25),_transparent_60%)] blur-2xl" />
-
-      {/* 트레일 (KTX 뒤로 흐르는 빛줄기) */}
-      <div className="absolute top-1/2 -translate-y-1/2 left-0 w-[120%] h-[3px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent opacity-70 [animation:ktx-trail_2s_linear_infinite]" />
-      <div className="absolute top-[55%] -translate-y-1/2 left-0 w-[120%] h-[1.5px] bg-gradient-to-r from-transparent via-cyan-200 to-transparent opacity-50 [animation:ktx-trail_2.7s_linear_infinite_0.3s]" />
-      <div className="absolute top-[45%] -translate-y-1/2 left-0 w-[120%] h-[1px] bg-gradient-to-r from-transparent via-blue-200 to-transparent opacity-40 [animation:ktx-trail_3.3s_linear_infinite_0.7s]" />
-
-      {/* KTX 본체 — 살짝 위아래 흔들림 */}
-      <svg
-        viewBox="0 0 600 300"
-        className="relative w-full h-auto max-w-[600px] [animation:ktx-hover_4s_ease-in-out_infinite] drop-shadow-[0_0_40px_rgba(34,211,238,0.4)]"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          {/* 본체 그라데이션 */}
-          <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#E0F7FF" />
-            <stop offset="40%" stopColor="#9FD8E8" />
-            <stop offset="100%" stopColor="#0E5A7A" />
-          </linearGradient>
-          {/* 사이드 액센트 */}
-          <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#22D3EE" stopOpacity="0" />
-            <stop offset="50%" stopColor="#22D3EE" stopOpacity="1" />
-            <stop offset="100%" stopColor="#67E8F9" stopOpacity="0" />
-          </linearGradient>
-          {/* 전조등 */}
-          <radialGradient id="headlightGrad" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
-            <stop offset="40%" stopColor="#A5F3FC" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#22D3EE" stopOpacity="0" />
-          </radialGradient>
-          {/* 창문 그라데이션 */}
-          <linearGradient id="windowGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0A1024" />
-            <stop offset="100%" stopColor="#1E293B" />
-          </linearGradient>
-          {/* 빛 콘 */}
-          <radialGradient id="lightCone" cx="0" cy="0.5" r="1">
-            <stop offset="0%" stopColor="#A5F3FC" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#22D3EE" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        {/* 빛 콘 (전조등 앞 빛 줄기) */}
-        <ellipse cx="80" cy="155" rx="80" ry="35" fill="url(#lightCone)" />
-
-        {/* 메인 본체 — 유선형 */}
-        <path
-          d="M 80 145
-             Q 70 130, 100 120
-             L 540 120
-             Q 580 120, 580 150
-             L 580 175
-             Q 580 195, 555 195
-             L 110 195
-             Q 80 195, 75 175
-             Z"
-          fill="url(#bodyGrad)"
-          stroke="rgba(165,243,252,0.4)"
-          strokeWidth="1"
-        />
-
-        {/* 헤드 노즈 (앞쪽 원뿔 강조) */}
-        <path
-          d="M 80 145
-             Q 70 130, 100 120
-             L 130 120
-             L 110 195
-             L 80 195
-             Q 75 175, 75 165
-             Z"
-          fill="rgba(255,255,255,0.15)"
-        />
-
-        {/* 측면 액센트 라인 (시안 글로우) */}
-        <line
-          x1="120"
-          y1="160"
-          x2="570"
-          y2="160"
-          stroke="url(#accentGrad)"
-          strokeWidth="2"
-          opacity="0.9"
-        >
-          <animate
-            attributeName="opacity"
-            values="0.6;1;0.6"
-            dur="2s"
-            repeatCount="indefinite"
-          />
-        </line>
-        <line
-          x1="140"
-          y1="180"
-          x2="555"
-          y2="180"
-          stroke="#22D3EE"
-          strokeWidth="0.8"
-          opacity="0.4"
-        />
-
-        {/* 창문들 */}
-        {Array.from({ length: 14 }).map((_, i) => (
-          <rect
-            key={i}
-            x={150 + i * 30}
-            y="135"
-            width="20"
-            height="14"
-            rx="2"
-            fill="url(#windowGrad)"
-            stroke="rgba(165,243,252,0.3)"
-            strokeWidth="0.5"
-          />
-        ))}
-
-        {/* 작은 디테일 — 측면 LED 점 */}
-        {Array.from({ length: 8 }).map((_, i) => (
-          <circle
-            key={i}
-            cx={170 + i * 50}
-            cy="170"
-            r="1.5"
-            fill="#67E8F9"
-          >
-            <animate
-              attributeName="opacity"
-              values="0.3;1;0.3"
-              dur={`${1 + (i % 3) * 0.3}s`}
-              repeatCount="indefinite"
-              begin={`${i * 0.1}s`}
-            />
-          </circle>
-        ))}
-
-        {/* 전조등 */}
-        <circle cx="98" cy="155" r="14" fill="url(#headlightGrad)">
-          <animate
-            attributeName="r"
-            values="13;16;13"
-            dur="1.8s"
-            repeatCount="indefinite"
-          />
-        </circle>
-        <circle cx="98" cy="155" r="5" fill="#FFFFFF" opacity="0.95" />
-
-        {/* 노즈 끝 — 살짝 발광 */}
-        <circle cx="80" cy="160" r="3" fill="#A5F3FC" opacity="0.7">
-          <animate
-            attributeName="opacity"
-            values="0.4;1;0.4"
-            dur="1.5s"
-            repeatCount="indefinite"
-          />
-        </circle>
-
-        {/* 바퀴 (단순화) */}
-        <ellipse
-          cx="180"
-          cy="205"
-          rx="20"
-          ry="6"
-          fill="rgba(0,0,0,0.5)"
-          opacity="0.6"
-        />
-        <ellipse
-          cx="450"
-          cy="205"
-          rx="20"
-          ry="6"
-          fill="rgba(0,0,0,0.5)"
-          opacity="0.6"
-        />
-
-        {/* 측면 KTX 마크 */}
-        <g transform="translate(310, 156)">
-          <rect
-            x="0"
-            y="0"
-            width="40"
-            height="14"
-            rx="2"
-            fill="rgba(34,211,238,0.15)"
-            stroke="#22D3EE"
-            strokeWidth="0.5"
-          />
-          <text
-            x="20"
-            y="11"
-            textAnchor="middle"
-            fontSize="9"
-            fontWeight="900"
-            fill="#67E8F9"
-            fontFamily="ui-sans-serif, system-ui"
-            letterSpacing="2"
-          >
-            CHIK
-          </text>
-        </g>
-
-        {/* 후미 라이트 */}
-        <circle cx="575" cy="155" r="3" fill="#FCA5A5" opacity="0.8">
-          <animate
-            attributeName="opacity"
-            values="0.5;1;0.5"
-            dur="2.2s"
-            repeatCount="indefinite"
-          />
-        </circle>
-      </svg>
-
-      {/* 바닥 그림자 / 반사 */}
-      <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[70%] h-2 bg-cyan-300/20 blur-md rounded-full" />
-
+      {/* ──────────────── 글로벌 키프레임 ──────────────── */}
       <style>{`
-        @keyframes ktx-hover {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
+        /* 풍경 스크롤 — 좌→우 무한 (앞으로 가는 느낌) */
+        @keyframes ktx-track {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-66.6667%); } /* 3장 중 1장 폭만큼 */
         }
-        @keyframes ktx-trail {
-          0% { transform: translateX(-30%) scaleX(0.8); opacity: 0; }
-          15% { opacity: 1; }
-          85% { opacity: 1; }
-          100% { transform: translateX(20%) scaleX(1.4); opacity: 0; }
+        .landscape-track {
+          animation: ktx-track 38s linear infinite;
+          will-change: transform;
         }
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
+
+        /* 객실 + 풍경 통합 흔들림 (매우 미세) */
+        @keyframes ktx-shake {
+          0%, 100% { transform: translate(0, 0); }
+          12% { transform: translate(-0.6px, 0.5px); }
+          24% { transform: translate(0.7px, -0.4px); }
+          36% { transform: translate(-0.4px, -0.6px); }
+          48% { transform: translate(0.5px, 0.6px); }
+          60% { transform: translate(-0.7px, 0.3px); }
+          72% { transform: translate(0.6px, -0.5px); }
+          84% { transform: translate(-0.5px, 0.5px); }
+        }
+        .hero-shake {
+          animation: ktx-shake 0.65s ease-in-out infinite;
+          will-change: transform;
+        }
+
+        /* 모션 줄이기 옵션 존중 */
+        @media (prefers-reduced-motion: reduce) {
+          .landscape-track { animation-duration: 90s; }
+          .hero-shake { animation: none; }
         }
       `}</style>
     </div>
   );
 }
 
-// ────────────────────────────────────────────────────────────────
-// 배경 효과
-// ────────────────────────────────────────────────────────────────
-function BackgroundFx() {
+// ────────────────────────────────────────────────
+// 통계 숫자 (헤로 우상단 — 모노스페이스)
+// ────────────────────────────────────────────────
+function Stat({ n }: { n: string }) {
   return (
-    <>
-      {/* 메인 그라데이션 */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#020611] via-[#040818] to-[#0A1530]" />
-
-      {/* 거대 글로우 */}
-      <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-[radial-gradient(circle,_rgba(34,211,238,0.18),_transparent_70%)] blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-[50%] h-[50%] bg-[radial-gradient(circle,_rgba(59,130,246,0.12),_transparent_70%)] blur-3xl" />
-
-      {/* 그리드 (느린 좌→우 패럴랙스) */}
-      <div
-        className="absolute inset-0 opacity-[0.08] [animation:grid-shift_60s_linear_infinite]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(34,211,238,1) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,1) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-          maskImage:
-            "radial-gradient(ellipse at center, black 30%, transparent 90%)",
-        }}
-      />
-
-      {/* 스캔라인 (살짝) */}
-      <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 3px)",
-        }}
-      />
-
-      {/* 광선 트레일 (배경 빠른 빛줄기) */}
-      <div className="absolute top-[20%] -left-1/3 w-[50%] h-[1px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent opacity-60 [animation:bg-trail_4s_linear_infinite]" />
-      <div className="absolute top-[80%] -left-1/3 w-[40%] h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-40 [animation:bg-trail_6s_linear_infinite_2s]" />
-
-      <style>{`
-        @keyframes grid-shift {
-          0% { background-position: 0 0; }
-          100% { background-position: 60px 0; }
-        }
-        @keyframes bg-trail {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(250vw); }
-        }
-      `}</style>
-    </>
+    <span className="text-base md:text-lg font-mono font-bold tabular-nums tracking-tight">
+      {n}
+    </span>
   );
 }
 
-// ────────────────────────────────────────────────────────────────
-// 하단 모듈 미니 카드 (CITYPUNKS의 NAV 느낌)
-// ────────────────────────────────────────────────────────────────
-function ModuleLink({
-  href,
+// ────────────────────────────────────────────────
+// 모듈 카드 — 베노 스타일, 호버 시 보더 페이드
+// ────────────────────────────────────────────────
+function ModuleCard({
   code,
   title,
-  sub,
-  accent = false,
+  kor,
+  desc,
+  href,
+  accent,
 }: {
-  href: string;
   code: string;
   title: string;
-  sub: string;
+  kor: string;
+  desc: string;
+  href: string;
   accent?: boolean;
 }) {
   return (
     <Link
       href={href as any}
-      className={`group relative px-4 py-3 rounded-xl border backdrop-blur-sm transition-all hover:-translate-y-0.5 ${
+      className={`group relative overflow-hidden rounded-3xl border p-7 md:p-9 transition-all duration-500 ${
         accent
-          ? "bg-cyan-300/5 border-cyan-300/30 hover:border-cyan-300/60"
-          : "bg-white/5 border-white/10 hover:border-white/30"
+          ? "bg-gradient-to-br from-amber-500/15 via-rose-500/5 to-transparent border-amber-300/20 hover:border-amber-300/40"
+          : "bg-white/[0.02] border-white/10 hover:bg-white/[0.04] hover:border-white/25"
       }`}
     >
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[9px] font-extrabold tracking-[0.2em] text-white/40">
-          {code}
+      <div className="flex items-start justify-between mb-10 md:mb-14">
+        <span className="text-[10px] font-mono tracking-[0.3em] text-white/40">
+          MODULE / {code}
         </span>
         <svg
-          width="10"
-          height="10"
+          width="22"
+          height="22"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.4"
+          strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`opacity-30 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all ${
-            accent ? "text-cyan-300" : "text-white"
-          }`}
+          className="text-white/40 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300"
         >
-          <path d="M5 12h14M12 5l7 7-7 7" />
+          <path d="M7 17L17 7" />
+          <path d="M7 7h10v10" />
         </svg>
       </div>
-      <p
-        className={`text-base font-extrabold tracking-wider ${
-          accent ? "text-cyan-100" : "text-white"
-        }`}
-      >
+
+      <p className="text-3xl md:text-4xl font-black tracking-tight mb-1.5">
         {title}
       </p>
-      <p className="text-[10px] text-white/40 mt-0.5">{sub}</p>
+      <p className="text-sm md:text-base text-white/70 font-bold mb-5">{kor}</p>
+
+      <p className="text-[13px] md:text-sm text-white/50 leading-relaxed font-medium max-w-md">
+        {desc}
+      </p>
+
+      <div className="absolute bottom-0 left-7 md:left-9 right-7 md:right-9 h-px bg-white/0 group-hover:bg-white/30 transition-colors duration-500" />
     </Link>
   );
 }
