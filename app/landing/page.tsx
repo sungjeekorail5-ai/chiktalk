@@ -1,18 +1,17 @@
-// 🚆 칙칙톡톡 랜딩 v3 — Railroad.ai 톤 헤로
+// 🚆 칙칙톡톡 랜딩 v3.1 — Railroad.ai 톤 헤로
 //
-// 객실 이미지의 검정 창문 영역에 풍경을 겹쳐
-// 좌→우 무한 스크롤 + 미세한 흔들림으로
-// 실제로 KTX를 타고 가는 듯한 시네마틱 헤로.
+// 객실 PNG의 검정 창문을 투명으로 변환해 풍경 위에 자연스럽게 합성.
 //
-// 핵심 설계:
-//   - 헤로 = 객실 이미지 원본 비율(1915:821) 유지
-//   - 화면이 가로로 넓으면 height = 100vh, width 자동
-//   - 화면이 세로로 길면 width = 100vw, height 자동
-//   - 양옆/위아래에 검은 letterbox (시네마틱)
-//   - 풍경 클립 좌표(top 15.1%, left 15%, right 15%, bottom 20%)가 항상 정확
+// 파이프라인:
+//   /landing/landscape.png   — 풍경 (좌→우 무한 스크롤)
+//   /landing/train-cutout.png — 객실 (창문이 투명, 풍경 위에 올라감)
 //
-// 헤더 가리기:
-//   - root layout의 nav/BottomNav를 z-100 fixed로 덮어버림
+// v3.0 → v3.1 변경:
+//   1. 풍경을 130% zoom + 더 빠른 스크롤 → 가로 흐름이 더 풍부
+//   2. 거울 제거, 풍경 4장 정상 이어 붙이기 + 양 끝 fade gradient
+//   3. 객실은 컷아웃 PNG 사용 → 풍경 위에 올라가서 창문 영역에만 풍경 노출
+//   4. 풍경 아래쪽은 객실의 창문 하단 곡선/베젤이 자연스럽게 가리고, 추가 비네팅
+//   5. 객실에 brightness/saturate 필터로 밝게 + 따뜻한 오버레이
 
 import Link from "next/link";
 
@@ -24,9 +23,9 @@ export const metadata = {
 export default function LandingV3Page() {
   return (
     <div className="fixed inset-0 z-[100] bg-[#050609] text-white overflow-y-auto overflow-x-hidden">
-      {/* ──────────────── 헤로 (풀스크린, 객실 비율 유지) ──────────────── */}
+      {/* ──────────────── 헤로 ──────────────── */}
       <section className="relative w-full bg-black flex items-center justify-center min-h-[100svh]">
-        {/* 객실 비율 컨테이너 — 화면을 꽉 채우면서 1915:821 비율 유지 */}
+        {/* 객실 비율 컨테이너 (1915×821 = 2.33:1 유지) */}
         <div
           className="relative ktx-frame"
           style={{
@@ -34,9 +33,9 @@ export default function LandingV3Page() {
             height: "min(100vh, calc(100vw * 821 / 1915))",
           }}
         >
-          {/* 객실 + 풍경 (한 묶음으로 흔들림) */}
+          {/* ─── 합성: 풍경(아래) → 객실 컷아웃(위) ─── */}
           <div className="absolute inset-0 hero-shake">
-            {/* 풍경 클립 — 객실 검정 창문 영역에 정확히 매핑 */}
+            {/* 1. 풍경 (객실 창문 위치/크기에 정확히 맞춤) */}
             <div
               className="absolute overflow-hidden"
               style={{
@@ -44,61 +43,87 @@ export default function LandingV3Page() {
                 left: "15%",
                 right: "15%",
                 bottom: "20%",
-                borderRadius: "16px",
               }}
             >
-              {/* 좌→우 무한 스크롤 트랙 (3장: 정상 → 거울 → 정상) */}
+              {/* 풍경 트랙 — 4장 정상 이어 붙이기 (거울 X) */}
               <div className="landscape-track absolute top-0 left-0 h-full flex">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/landing/landscape.png"
-                  alt=""
-                  className="h-full w-auto object-cover shrink-0 select-none"
-                  draggable={false}
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/landing/landscape.png"
-                  alt=""
-                  className="h-full w-auto object-cover shrink-0 select-none"
-                  draggable={false}
-                  style={{ transform: "scaleX(-1)" }}
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/landing/landscape.png"
-                  alt=""
-                  className="h-full w-auto object-cover shrink-0 select-none"
-                  draggable={false}
-                />
+                {[0, 1, 2, 3].map((i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src="/landing/landscape.png"
+                    alt=""
+                    className="h-full w-auto object-cover shrink-0 select-none"
+                    draggable={false}
+                    style={{
+                      // 풍경을 살짝 zoom (가로로 더 길게 흐르는 느낌)
+                      transform: "scale(1.18)",
+                      transformOrigin: "center center",
+                    }}
+                  />
+                ))}
               </div>
 
-              {/* 창문 글로우 */}
+              {/* 양 끝 fade — 풍경 점프컷 가림 */}
               <div
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-y-0 left-0 w-[8%] pointer-events-none z-10"
                 style={{
                   background:
-                    "radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%)",
+                    "linear-gradient(to right, rgba(0,0,0,0.85), transparent)",
+                }}
+              />
+              <div
+                className="absolute inset-y-0 right-0 w-[8%] pointer-events-none z-10"
+                style={{
+                  background:
+                    "linear-gradient(to left, rgba(0,0,0,0.85), transparent)",
+                }}
+              />
+
+              {/* 아래쪽 fade — 풍경 모션블러 깨진 느낌 가림 */}
+              <div
+                className="absolute inset-x-0 bottom-0 h-[18%] pointer-events-none z-10"
+                style={{
+                  background:
+                    "linear-gradient(to top, rgba(0,0,0,0.55), transparent)",
+                }}
+              />
+
+              {/* 전체 비네팅 (창문 안 분위기) */}
+              <div
+                className="absolute inset-0 pointer-events-none z-10"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.35) 100%)",
                 }}
               />
             </div>
 
-            {/* 객실 이미지 (풍경 위로 — 창문 부분이 검정이라 자동으로 풍경 위로 가려야 함) */}
-            {/* 실제로는 풍경이 객실의 창문 영역에만 보이므로, 객실은 풍경 아래에 깔리고
-                풍경이 창문 영역에 클리핑되어 위에 올라옴 (위 구조와 동일) */}
+            {/* 2. 객실 컷아웃 (창문 투명) — 풍경 위로 올라옴 */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/landing/train-interior.png"
+              src="/landing/train-cutout.png"
               alt="KTX cabin"
-              className="absolute inset-0 w-full h-full object-cover -z-10"
+              className="absolute inset-0 w-full h-full object-cover"
               draggable={false}
+              style={{
+                filter: "brightness(1.18) saturate(1.05) contrast(0.96)",
+              }}
+            />
+
+            {/* 3. 따뜻한 오버레이 (객실 톤 보정 — 터널 같은 느낌 줄이기) */}
+            <div
+              className="absolute inset-0 pointer-events-none mix-blend-overlay"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(255,180,90,0.06) 0%, transparent 30%, transparent 70%, rgba(255,200,120,0.04) 100%)",
+              }}
             />
           </div>
 
-          {/* 헤로 콘텐츠 — 흔들리지 않는 별도 레이어 */}
+          {/* ─── 헤로 콘텐츠 (흔들리지 않음) ─── */}
           <div className="absolute inset-0 z-30 flex flex-col justify-end p-5 md:p-10 pointer-events-none">
             <div className="max-w-5xl pointer-events-auto">
-              {/* 메타 라벨 */}
               <div className="flex items-center gap-3 mb-3 md:mb-4">
                 <span className="inline-block w-6 h-px bg-white/60" />
                 <p className="text-[9px] md:text-[10px] font-mono tracking-[0.3em] text-white/70">
@@ -106,29 +131,29 @@ export default function LandingV3Page() {
                 </p>
               </div>
 
-              {/* 거대 타이포 */}
               <h1
                 className="font-black tracking-tight leading-[0.88]"
-                style={{ textShadow: "0 4px 30px rgba(0,0,0,0.5)" }}
+                style={{ textShadow: "0 6px 40px rgba(0,0,0,0.6)" }}
               >
-                <span className="block text-[11vw] md:text-[7.5vw] bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-transparent">
+                <span className="block text-[11vw] md:text-[7vw] bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-transparent">
                   NEXT STATION,
                 </span>
-                <span className="block text-[11vw] md:text-[7.5vw] italic font-light text-white/95">
+                <span className="block text-[11vw] md:text-[7vw] italic font-light text-white/95">
                   future.
                 </span>
               </h1>
 
-              {/* 서브 카피 */}
-              <p className="mt-3 md:mt-5 max-w-md text-[12px] md:text-[15px] leading-relaxed text-white/80 font-medium">
+              <p
+                className="mt-3 md:mt-5 max-w-md text-[12px] md:text-[15px] leading-relaxed text-white/85 font-medium"
+                style={{ textShadow: "0 2px 12px rgba(0,0,0,0.7)" }}
+              >
                 코레일 스태프를 위한 디지털 정거장.
                 <br />
-                <span className="text-white/55">
+                <span className="text-white/60">
                   Built for those who keep Korea moving.
                 </span>
               </p>
 
-              {/* CTA */}
               <div className="mt-4 md:mt-6 flex flex-wrap items-center gap-2 md:gap-3">
                 <Link
                   href={"/web" as any}
@@ -169,7 +194,7 @@ export default function LandingV3Page() {
           {/* 좌상단 라이브 인디케이터 */}
           <div className="absolute top-4 md:top-6 left-5 md:left-8 z-30 pointer-events-none flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <p className="text-[9px] md:text-[10px] font-mono font-bold tracking-[0.3em] text-white/80">
+            <p className="text-[9px] md:text-[10px] font-mono font-bold tracking-[0.3em] text-white/85">
               CHIKTALK / EST. 2026
             </p>
           </div>
@@ -235,7 +260,6 @@ export default function LandingV3Page() {
         </div>
       </section>
 
-      {/* ──────────────── 푸터 ──────────────── */}
       <footer className="px-6 md:px-12 py-10 border-t border-white/10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <p className="text-[11px] font-mono tracking-[0.25em] text-white/40">
@@ -247,15 +271,15 @@ export default function LandingV3Page() {
         </div>
       </footer>
 
-      {/* ──────────────── 글로벌 키프레임 ──────────────── */}
+      {/* ──────────────── 키프레임 ──────────────── */}
       <style>{`
-        /* 풍경 스크롤 — 좌→우 무한 (앞으로 가는 느낌) */
+        /* 풍경 스크롤 — 좌→우 무한 (앞으로 가는 느낌, 더 빠르게) */
         @keyframes ktx-track {
           from { transform: translateX(0); }
-          to   { transform: translateX(-66.6667%); }
+          to   { transform: translateX(-50%); } /* 4장 중 2장만큼 */
         }
         .landscape-track {
-          animation: ktx-track 38s linear infinite;
+          animation: ktx-track 24s linear infinite;
           will-change: transform;
         }
 
@@ -275,9 +299,8 @@ export default function LandingV3Page() {
           will-change: transform;
         }
 
-        /* 모션 줄이기 옵션 존중 */
         @media (prefers-reduced-motion: reduce) {
-          .landscape-track { animation-duration: 90s; }
+          .landscape-track { animation-duration: 60s; }
           .hero-shake { animation: none; }
         }
       `}</style>
@@ -285,7 +308,6 @@ export default function LandingV3Page() {
   );
 }
 
-// ────────────────────────────────────────────────
 function Stat({ n }: { n: string }) {
   return (
     <span className="text-sm md:text-base font-mono font-bold tabular-nums tracking-tight">
@@ -294,7 +316,6 @@ function Stat({ n }: { n: string }) {
   );
 }
 
-// ────────────────────────────────────────────────
 function ModuleCard({
   code,
   title,
