@@ -4,9 +4,15 @@
 // 좌→우 무한 스크롤 + 미세한 흔들림으로
 // 실제로 KTX를 타고 가는 듯한 시네마틱 헤로.
 //
-// 이미지:
-//   /landing/train-interior.png  — 객실 (창문은 검정으로 비어있음)
-//   /landing/landscape.png       — 한국 봄 풍경 (벚꽃·논·산·노을)
+// 핵심 설계:
+//   - 헤로 = 객실 이미지 원본 비율(1915:821) 유지
+//   - 화면이 가로로 넓으면 height = 100vh, width 자동
+//   - 화면이 세로로 길면 width = 100vw, height 자동
+//   - 양옆/위아래에 검은 letterbox (시네마틱)
+//   - 풍경 클립 좌표(top 15.1%, left 15%, right 15%, bottom 20%)가 항상 정확
+//
+// 헤더 가리기:
+//   - root layout의 nav/BottomNav를 z-100 fixed로 덮어버림
 
 import Link from "next/link";
 
@@ -17,154 +23,162 @@ export const metadata = {
 
 export default function LandingV3Page() {
   return (
-    <div className="bg-[#050609] text-white min-h-screen overflow-hidden">
-      {/* ──────────────── 헤더 ──────────────── */}
-      <header className="absolute top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <p className="text-[10px] md:text-[11px] font-mono font-bold tracking-[0.3em] text-white/70">
-            CHIKTALK / EST. 2026
-          </p>
-        </div>
-        <p className="hidden md:block text-[10px] font-mono tracking-[0.25em] text-white/50">
-          KORAIL STAFF · ONLINE
-        </p>
-      </header>
+    <div className="fixed inset-0 z-[100] bg-[#050609] text-white overflow-y-auto overflow-x-hidden">
+      {/* ──────────────── 헤로 (풀스크린, 객실 비율 유지) ──────────────── */}
+      <section className="relative w-full bg-black flex items-center justify-center min-h-[100svh]">
+        {/* 객실 비율 컨테이너 — 화면을 꽉 채우면서 1915:821 비율 유지 */}
+        <div
+          className="relative ktx-frame"
+          style={{
+            width: "min(100vw, calc(100vh * 1915 / 821))",
+            height: "min(100vh, calc(100vw * 821 / 1915))",
+          }}
+        >
+          {/* 객실 + 풍경 (한 묶음으로 흔들림) */}
+          <div className="absolute inset-0 hero-shake">
+            {/* 풍경 클립 — 객실 검정 창문 영역에 정확히 매핑 */}
+            <div
+              className="absolute overflow-hidden"
+              style={{
+                top: "15.1%",
+                left: "15%",
+                right: "15%",
+                bottom: "20%",
+                borderRadius: "16px",
+              }}
+            >
+              {/* 좌→우 무한 스크롤 트랙 (3장: 정상 → 거울 → 정상) */}
+              <div className="landscape-track absolute top-0 left-0 h-full flex">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/landing/landscape.png"
+                  alt=""
+                  className="h-full w-auto object-cover shrink-0 select-none"
+                  draggable={false}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/landing/landscape.png"
+                  alt=""
+                  className="h-full w-auto object-cover shrink-0 select-none"
+                  draggable={false}
+                  style={{ transform: "scaleX(-1)" }}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/landing/landscape.png"
+                  alt=""
+                  className="h-full w-auto object-cover shrink-0 select-none"
+                  draggable={false}
+                />
+              </div>
 
-      {/* ──────────────── 헤로 (풀스크린) ──────────────── */}
-      <section className="relative h-[100svh] min-h-[600px] w-full overflow-hidden">
-        {/* 객실 + 풍경 (한 묶음으로 흔들림) */}
-        <div className="absolute inset-0 hero-shake">
-          {/* 객실 (베이스) */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/landing/train-interior.png"
-            alt="KTX cabin"
-            className="absolute inset-0 w-full h-full object-cover"
-            draggable={false}
-          />
-
-          {/* 풍경 클립 — 객실의 검정 창문 영역에만 보이게 */}
-          <div
-            className="absolute overflow-hidden"
-            style={{
-              // 창문 좌표 (객실 이미지 비율 기준 추정 — 실측 후 미세조정 가능)
-              top: "5%",
-              left: "12%",
-              right: "10%",
-              bottom: "18%",
-              borderRadius: "24px",
-            }}
-          >
-            {/* 좌→우 무한 스크롤 트랙 (3장: 정상 → 거울 → 정상) */}
-            <div className="landscape-track absolute top-0 left-0 h-full flex">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/landing/landscape.png"
-                alt=""
-                className="h-full w-auto object-cover shrink-0 select-none"
-                draggable={false}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/landing/landscape.png"
-                alt=""
-                className="h-full w-auto object-cover shrink-0 select-none"
-                draggable={false}
-                style={{ transform: "scaleX(-1)" }}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/landing/landscape.png"
-                alt=""
-                className="h-full w-auto object-cover shrink-0 select-none"
-                draggable={false}
+              {/* 창문 글로우 */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%)",
+                }}
               />
             </div>
 
-            {/* 창문 안쪽 글로우 (분위기) */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  "radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.35) 100%)",
-              }}
+            {/* 객실 이미지 (풍경 위로 — 창문 부분이 검정이라 자동으로 풍경 위로 가려야 함) */}
+            {/* 실제로는 풍경이 객실의 창문 영역에만 보이므로, 객실은 풍경 아래에 깔리고
+                풍경이 창문 영역에 클리핑되어 위에 올라옴 (위 구조와 동일) */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/landing/train-interior.png"
+              alt="KTX cabin"
+              className="absolute inset-0 w-full h-full object-cover -z-10"
+              draggable={false}
             />
           </div>
-        </div>
 
-        {/* 헤로 콘텐츠 (흔들리지 않음 — 가독성) */}
-        <div className="relative z-30 h-full flex flex-col justify-end px-6 md:px-12 pb-14 md:pb-20">
-          <div className="max-w-6xl">
-            {/* 메타 라벨 */}
-            <div className="flex items-center gap-3 mb-4 md:mb-6">
-              <span className="inline-block w-8 h-px bg-white/60" />
-              <p className="text-[10px] md:text-[11px] font-mono tracking-[0.3em] text-white/70">
-                LINE 01 · KORAIL DIGITAL STATION
-              </p>
-            </div>
+          {/* 헤로 콘텐츠 — 흔들리지 않는 별도 레이어 */}
+          <div className="absolute inset-0 z-30 flex flex-col justify-end p-5 md:p-10 pointer-events-none">
+            <div className="max-w-5xl pointer-events-auto">
+              {/* 메타 라벨 */}
+              <div className="flex items-center gap-3 mb-3 md:mb-4">
+                <span className="inline-block w-6 h-px bg-white/60" />
+                <p className="text-[9px] md:text-[10px] font-mono tracking-[0.3em] text-white/70">
+                  LINE 01 · KORAIL DIGITAL STATION
+                </p>
+              </div>
 
-            {/* 거대 타이포 */}
-            <h1 className="font-black tracking-tight leading-[0.88]">
-              <span className="block text-[14vw] md:text-[10vw] lg:text-[8.5vw] bg-gradient-to-b from-white via-white to-white/60 bg-clip-text text-transparent">
-                NEXT STATION,
-              </span>
-              <span className="block text-[14vw] md:text-[10vw] lg:text-[8.5vw] italic font-light text-white/95">
-                future.
-              </span>
-            </h1>
-
-            {/* 서브 카피 */}
-            <p className="mt-6 md:mt-8 max-w-md md:max-w-lg text-[15px] md:text-[17px] leading-relaxed text-white/75 font-medium">
-              코레일 스태프를 위한 디지털 정거장.
-              <br />
-              <span className="text-white/55">
-                Built for those who keep Korea moving.
-              </span>
-            </p>
-
-            {/* CTA */}
-            <div className="mt-8 md:mt-10 flex flex-wrap items-center gap-3 md:gap-4">
-              <Link
-                href={"/web" as any}
-                className="group inline-flex items-center gap-3 bg-white text-black px-6 md:px-7 py-3.5 md:py-4 rounded-full text-sm md:text-base font-extrabold tracking-tight active:scale-[0.97] transition-transform"
+              {/* 거대 타이포 */}
+              <h1
+                className="font-black tracking-tight leading-[0.88]"
+                style={{ textShadow: "0 4px 30px rgba(0,0,0,0.5)" }}
               >
-                <span>BOARDING</span>
-                <span className="inline-block transition-transform group-hover:translate-x-1">
-                  →
+                <span className="block text-[11vw] md:text-[7.5vw] bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-transparent">
+                  NEXT STATION,
                 </span>
-              </Link>
-              <Link
-                href={"/board" as any}
-                className="inline-flex items-center gap-2 px-5 md:px-6 py-3.5 md:py-4 rounded-full text-sm md:text-base font-bold text-white/90 border border-white/25 hover:bg-white/10 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
-                EXPLORE
-              </Link>
+                <span className="block text-[11vw] md:text-[7.5vw] italic font-light text-white/95">
+                  future.
+                </span>
+              </h1>
+
+              {/* 서브 카피 */}
+              <p className="mt-3 md:mt-5 max-w-md text-[12px] md:text-[15px] leading-relaxed text-white/80 font-medium">
+                코레일 스태프를 위한 디지털 정거장.
+                <br />
+                <span className="text-white/55">
+                  Built for those who keep Korea moving.
+                </span>
+              </p>
+
+              {/* CTA */}
+              <div className="mt-4 md:mt-6 flex flex-wrap items-center gap-2 md:gap-3">
+                <Link
+                  href={"/web" as any}
+                  className="group inline-flex items-center gap-2 bg-white text-black px-4 md:px-6 py-2.5 md:py-3.5 rounded-full text-xs md:text-sm font-extrabold tracking-tight active:scale-[0.97] transition-transform"
+                >
+                  <span>BOARDING</span>
+                  <span className="inline-block transition-transform group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </Link>
+                <Link
+                  href={"/board" as any}
+                  className="inline-flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3.5 rounded-full text-xs md:text-sm font-bold text-white/90 border border-white/30 hover:bg-white/10 transition-colors backdrop-blur-sm"
+                >
+                  <span className="w-1 h-1 rounded-full bg-white/80" />
+                  EXPLORE
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 우상단 메타 위젯 */}
-        <div className="hidden md:block absolute top-20 right-10 z-30">
-          <div className="text-right space-y-1.5">
-            <p className="text-[10px] font-mono tracking-[0.25em] text-white/50">
-              EXAM · AI · IMAGES
-            </p>
-            <div className="flex items-center justify-end gap-3 text-white">
-              <Stat n="5,979" />
-              <span className="text-white/30 font-mono">/</span>
-              <Stat n="2,960" />
-              <span className="text-white/30 font-mono">/</span>
-              <Stat n="356" />
+          {/* 우상단 통계 위젯 */}
+          <div className="hidden md:block absolute top-6 right-6 z-30 pointer-events-none">
+            <div className="text-right space-y-1">
+              <p className="text-[9px] font-mono tracking-[0.25em] text-white/60">
+                EXAM · AI · IMAGES
+              </p>
+              <div className="flex items-center justify-end gap-2 text-white">
+                <Stat n="5,979" />
+                <span className="text-white/40 font-mono">/</span>
+                <Stat n="2,960" />
+                <span className="text-white/40 font-mono">/</span>
+                <Stat n="356" />
+              </div>
             </div>
+          </div>
+
+          {/* 좌상단 라이브 인디케이터 */}
+          <div className="absolute top-4 md:top-6 left-5 md:left-8 z-30 pointer-events-none flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <p className="text-[9px] md:text-[10px] font-mono font-bold tracking-[0.3em] text-white/80">
+              CHIKTALK / EST. 2026
+            </p>
           </div>
         </div>
 
         {/* 우하단 스크롤 인디케이터 */}
-        <div className="hidden md:flex absolute bottom-8 right-10 z-30 items-center gap-2 text-white/50">
+        <div className="hidden md:flex absolute bottom-6 right-6 z-30 items-center gap-2 text-white/50">
           <p className="text-[10px] font-mono tracking-[0.3em]">SCROLL</p>
-          <div className="w-px h-8 bg-gradient-to-b from-white/40 to-transparent" />
+          <div className="w-px h-7 bg-gradient-to-b from-white/40 to-transparent" />
         </div>
       </section>
 
@@ -238,7 +252,7 @@ export default function LandingV3Page() {
         /* 풍경 스크롤 — 좌→우 무한 (앞으로 가는 느낌) */
         @keyframes ktx-track {
           from { transform: translateX(0); }
-          to   { transform: translateX(-66.6667%); } /* 3장 중 1장 폭만큼 */
+          to   { transform: translateX(-66.6667%); }
         }
         .landscape-track {
           animation: ktx-track 38s linear infinite;
@@ -272,18 +286,14 @@ export default function LandingV3Page() {
 }
 
 // ────────────────────────────────────────────────
-// 통계 숫자 (헤로 우상단 — 모노스페이스)
-// ────────────────────────────────────────────────
 function Stat({ n }: { n: string }) {
   return (
-    <span className="text-base md:text-lg font-mono font-bold tabular-nums tracking-tight">
+    <span className="text-sm md:text-base font-mono font-bold tabular-nums tracking-tight">
       {n}
     </span>
   );
 }
 
-// ────────────────────────────────────────────────
-// 모듈 카드 — 베노 스타일, 호버 시 보더 페이드
 // ────────────────────────────────────────────────
 function ModuleCard({
   code,
