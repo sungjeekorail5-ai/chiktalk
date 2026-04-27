@@ -123,8 +123,24 @@ export function pickExamQuestions(
 }
 
 /**
+ * 직렬 → 통합문제에 포함될 카테고리 매핑
+ * (해당 직렬 응시자가 공부해야 할 모든 사규를 합쳐 통합 풀로 사용)
+ */
+export const MAJOR_TO_CATEGORIES: Record<string, string[]> = {
+  사무영업: ["공통사항", "여객·화물관계사규", "운전관계사규"],
+  운전: ["공통사항", "운전관계사규"],
+  차량: ["공통사항", "차량관계사규", "철도차량공학"],
+  // 토목/건축/전기통신/신호제어 — 공통사항만 (사규 미입력)
+  토목: ["공통사항"],
+  건축: ["공통사항"],
+  전기통신: ["공통사항"],
+  신호제어: ["공통사항"],
+};
+
+/**
  * 무한 모드 출제 풀
- *  - sourceName === '통합'  → 전체 AI 문제
+ *  - sourceName === '통합'  → 직렬에 해당하는 카테고리만 합쳐 통합
+ *                             (major 미지정 시: 전체 AI 문제)
  *  - sourceName === '전체'  → category 일치
  *  - 그 외  → source 일치
  */
@@ -134,7 +150,14 @@ export function pickInfinitePool(
 ): Question[] {
   let pool: Question[];
   if (selection.source === "통합") {
-    pool = aiAll;
+    const cats = selection.major
+      ? MAJOR_TO_CATEGORIES[selection.major]
+      : undefined;
+    if (cats && cats.length > 0) {
+      pool = aiAll.filter((q) => q.category && cats.includes(q.category));
+    } else {
+      pool = aiAll;
+    }
   } else if (selection.source === "전체") {
     pool = aiAll.filter((q) => q.category === selection.category);
   } else {

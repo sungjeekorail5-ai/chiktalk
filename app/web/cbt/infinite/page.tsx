@@ -193,38 +193,49 @@ export default function CbtInfinitePage() {
               </p>
             </div>
 
-            {/* 사무영업 전용: 통합문제 카드 (랭킹 등록 가능) */}
-            {major === "사무영업" && (
-              <button
-                onClick={() =>
-                  start({ category: "통합문제", source: "통합" })
-                }
-                className="w-full text-left p-5 rounded-3xl bg-gradient-to-br from-amber-500 to-red-500 text-white active:scale-[0.98] transition-transform"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 shrink-0 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="16 3 21 3 21 8" />
-                      <line x1="4" y1="20" x2="21" y2="3" />
-                      <polyline points="21 16 21 21 16 21" />
-                      <line x1="15" y1="15" x2="21" y2="21" />
-                      <line x1="4" y1="4" x2="9" y2="9" />
-                    </svg>
+            {/* 통합문제 카드 (사무영업·차량 — 랭킹 등록 가능) */}
+            {(major === "사무영업" || major === "차량") && (() => {
+              // 직렬에 해당하는 카테고리 합산 (사무영업·차량)
+              const cats =
+                major === "사무영업"
+                  ? ["공통사항", "여객·화물관계사규", "운전관계사규"]
+                  : ["공통사항", "차량관계사규", "철도차량공학"];
+              const total = cats.reduce(
+                (sum, c) => sum + (counts.byCategory[c] ?? 0),
+                0
+              );
+              return (
+                <button
+                  onClick={() =>
+                    start({ category: "통합문제", source: "통합" })
+                  }
+                  className="w-full text-left p-5 rounded-3xl bg-gradient-to-br from-amber-500 to-red-500 text-white active:scale-[0.98] transition-transform"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 shrink-0 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="16 3 21 3 21 8" />
+                        <line x1="4" y1="20" x2="21" y2="3" />
+                        <polyline points="21 16 21 21 16 21" />
+                        <line x1="15" y1="15" x2="21" y2="21" />
+                        <line x1="4" y1="4" x2="9" y2="9" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xl font-extrabold tracking-tight">
+                        통합문제
+                      </p>
+                      <p className="text-xs opacity-80 mt-0.5">
+                        {major} 전 사규 {total}문제 랜덤 셔플
+                      </p>
+                      <span className="inline-block mt-2 text-[10px] font-extrabold bg-white/25 px-2 py-0.5 rounded">
+                        🏆 랭킹 등록 가능
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xl font-extrabold tracking-tight">
-                      통합문제
-                    </p>
-                    <p className="text-xs opacity-80 mt-0.5">
-                      모든 사규 {counts.total}문제 랜덤 셔플
-                    </p>
-                    <span className="inline-block mt-2 text-[10px] font-extrabold bg-white/25 px-2 py-0.5 rounded">
-                      🏆 랭킹 등록 가능
-                    </span>
-                  </div>
-                </div>
-              </button>
-            )}
+                </button>
+              );
+            })()}
 
             {/* 카테고리 카드 */}
             {availableCategoriesForMajor.map((cat) => {
@@ -263,12 +274,12 @@ export default function CbtInfinitePage() {
               );
             })}
 
-            {major !== "사무영업" && (
+            {major !== "사무영업" && major !== "차량" && (
               <div className="bg-amber-50 rounded-2xl p-3 text-[11px] text-amber-700 font-semibold leading-relaxed">
                 활성화된 과목 외에는 아직 문제가 준비 중이에요.
                 <br />
-                통합문제 랭킹 등록은 <strong>사무영업</strong> 직렬에서만
-                가능해요.
+                통합문제 랭킹 등록은{" "}
+                <strong>사무영업·차량</strong> 직렬에서만 가능해요.
               </div>
             )}
           </div>
